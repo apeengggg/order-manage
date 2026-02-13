@@ -96,9 +96,9 @@ CREATE TABLE `role_permissions` (
 
 -- Password: admin123
 INSERT INTO `users` (`username`, `password`, `name`, `role`) VALUES
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Administrator', 'admin'),
-('cs1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Customer Service 1', 'cs'),
-('cs2', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Customer Service 2', 'cs');
+('admin', '$2y$10$J9wEl7EGZsqfZy4pdA9zJOlPpulqqah3aBbvRZGYSBgsw4Oa9Br.W', 'Administrator', 'admin'),
+('cs1', '$2y$10$J9wEl7EGZsqfZy4pdA9zJOlPpulqqah3aBbvRZGYSBgsw4Oa9Br.W', 'Customer Service 1', 'cs'),
+('cs2', '$2y$10$J9wEl7EGZsqfZy4pdA9zJOlPpulqqah3aBbvRZGYSBgsw4Oa9Br.W', 'Customer Service 2', 'cs');
 
 INSERT INTO `expeditions` (`name`, `code`) VALUES
 ('JNE', 'JNE'),
