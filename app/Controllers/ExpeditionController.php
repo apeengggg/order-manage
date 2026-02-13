@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../models/Expedition.php';
+namespace App\Controllers;
+
+use App\Models\Expedition;
 
 class ExpeditionController {
     private $expedition;
@@ -9,12 +11,14 @@ class ExpeditionController {
     }
 
     public function index() {
+        checkPermission('expeditions', 'can_view');
         $expeditions = $this->expedition->getAll();
         $pageTitle = 'Kelola Ekspedisi';
-        require __DIR__ . '/../views/expeditions/index.php';
+        require __DIR__ . '/../../views/expeditions/index.php';
     }
 
     public function create() {
+        checkPermission('expeditions', 'can_add');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'name' => trim($_POST['name'] ?? ''),
@@ -31,6 +35,7 @@ class ExpeditionController {
     }
 
     public function update($id) {
+        checkPermission('expeditions', 'can_edit');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'name' => trim($_POST['name'] ?? ''),
@@ -43,6 +48,7 @@ class ExpeditionController {
     }
 
     public function delete($id) {
+        checkPermission('expeditions', 'can_delete');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->expedition->delete($id);
             flash('success', 'Ekspedisi berhasil dihapus.');

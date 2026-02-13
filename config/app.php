@@ -50,3 +50,33 @@ function e($str) {
 function formatRupiah($num) {
     return 'Rp ' . number_format($num, 0, ',', '.');
 }
+
+/**
+ * Load permissions into session after login
+ */
+function loadPermissions($role) {
+    $perm = new \App\Models\Permission();
+    $_SESSION['permissions'] = $perm->loadPermissionsForRole($role);
+    $_SESSION['menus'] = array_filter($_SESSION['permissions'], fn($p) => $p['can_view'] === 1);
+}
+
+/**
+ * Check if current user has a specific permission on a module
+ * @param string $moduleSlug e.g. 'orders', 'admin-export'
+ * @param string $type e.g. 'can_view', 'can_add', 'can_edit', 'can_delete', 'can_view_detail', 'can_upload', 'can_download'
+ */
+function hasPermission($moduleSlug, $type = 'can_view') {
+    $permissions = $_SESSION['permissions'] ?? [];
+    if (!isset($permissions[$moduleSlug])) return false;
+    return (int)($permissions[$moduleSlug][$type] ?? 0) === 1;
+}
+
+/**
+ * Abort with permission denied if no permission
+ */
+function checkPermission($moduleSlug, $type = 'can_view') {
+    if (!hasPermission($moduleSlug, $type)) {
+        flash('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
+        redirect('dashboard');
+    }
+}

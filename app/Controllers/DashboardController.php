@@ -1,6 +1,7 @@
 <?php
-require_once __DIR__ . '/../models/Order.php';
-require_once __DIR__ . '/../models/Expedition.php';
+namespace App\Controllers;
+
+use App\Models\Order;
 
 class DashboardController {
     private $order;
@@ -16,6 +17,6 @@ class DashboardController {
         $revenue = $this->order->totalRevenue();
 
         $pageTitle = 'Dashboard';
-        require __DIR__ . '/../views/dashboard/index.php';
+        require __DIR__ . '/../../views/dashboard/index.php';
     }
 }

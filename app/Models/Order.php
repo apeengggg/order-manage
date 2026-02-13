@@ -1,4 +1,8 @@
 <?php
+namespace App\Models;
+
+use PDO;
+
 class Order {
     private $db;
 
@@ -70,7 +74,6 @@ class Order {
     }
 
     public function update($id, $data) {
-        // Check if exported - block edit
         $order = $this->find($id);
         if ($order && $order['is_exported']) {
             return false;
@@ -96,7 +99,6 @@ class Order {
     }
 
     public function delete($id) {
-        // Check if exported - block delete
         $order = $this->find($id);
         if ($order && $order['is_exported']) {
             return false;
@@ -110,18 +112,12 @@ class Order {
     public function markExported($ids, $userId) {
         if (empty($ids)) return false;
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $params = array_merge($ids, [$userId]);
         $stmt = $this->db->prepare(
             "UPDATE orders SET is_exported=1, exported_at=NOW(), exported_by=?
              WHERE id IN ($placeholders) AND is_exported=0"
         );
-        // Reorder: exported_by first then ids
-        $stmt2 = $this->db->prepare(
-            "UPDATE orders SET is_exported=1, exported_at=NOW(), exported_by=?
-             WHERE id IN ($placeholders) AND is_exported=0"
-        );
-        $stmt2->execute(array_merge([$userId], $ids));
-        return $stmt2->rowCount();
+        $stmt->execute(array_merge([$userId], $ids));
+        return $stmt->rowCount();
     }
 
     public function getByExpedition($expeditionId, $exportedOnly = false) {

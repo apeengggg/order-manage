@@ -1,5 +1,14 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config/app.php';
+
+use App\Controllers\AuthController;
+use App\Controllers\DashboardController;
+use App\Controllers\OrderController;
+use App\Controllers\AdminController;
+use App\Controllers\ExpeditionController;
+use App\Controllers\PermissionController;
+use App\Controllers\ModuleController;
 
 // Simple router
 $url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
@@ -17,34 +26,42 @@ if (!isLoggedIn() && $page !== 'auth') {
 // Route to controllers
 switch ($page) {
     case 'auth':
-        require_once __DIR__ . '/controllers/AuthController.php';
         $ctrl = new AuthController();
         break;
 
     case 'dashboard':
         if (!isLoggedIn()) redirect('auth/login');
-        require_once __DIR__ . '/controllers/DashboardController.php';
+        checkPermission('dashboard', 'can_view');
         $ctrl = new DashboardController();
         break;
 
     case 'orders':
         if (!isLoggedIn()) redirect('auth/login');
-        require_once __DIR__ . '/controllers/OrderController.php';
         $ctrl = new OrderController();
         break;
 
     case 'admin':
         if (!isLoggedIn()) redirect('auth/login');
-        if (!isAdmin()) redirect('dashboard');
-        require_once __DIR__ . '/controllers/AdminController.php';
+        checkPermission('admin-export', 'can_view');
         $ctrl = new AdminController();
         break;
 
     case 'expeditions':
         if (!isLoggedIn()) redirect('auth/login');
-        if (!isAdmin()) redirect('dashboard');
-        require_once __DIR__ . '/controllers/ExpeditionController.php';
+        checkPermission('expeditions', 'can_view');
         $ctrl = new ExpeditionController();
+        break;
+
+    case 'permissions':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('permissions', 'can_view');
+        $ctrl = new PermissionController();
+        break;
+
+    case 'modules':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('permissions', 'can_view');
+        $ctrl = new ModuleController();
         break;
 
     default:

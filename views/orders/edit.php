@@ -20,13 +20,6 @@
 
     <section class="content">
         <div class="container-fluid">
-            <?php if ($err = flash('error')): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <i class="fas fa-exclamation-triangle mr-1"></i> <?= e($err) ?>
-            </div>
-            <?php endif; ?>
-
             <form method="POST" action="<?= BASE_URL ?>orders/edit/<?= $order['id'] ?>">
                 <div class="row">
                     <div class="col-md-6">

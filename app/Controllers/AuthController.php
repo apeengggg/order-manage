@@ -1,5 +1,7 @@
 <?php
-require_once __DIR__ . '/../models/User.php';
+namespace App\Controllers;
+
+use App\Models\User;
 
 class AuthController {
     private $user;
@@ -21,7 +23,7 @@ class AuthController {
 
             if (empty($username) || empty($password)) {
                 flash('error', 'Username dan password harus diisi.');
-                require __DIR__ . '/../views/auth/login.php';
+                require __DIR__ . '/../../views/auth/login.php';
                 return;
             }
 
@@ -31,13 +33,14 @@ class AuthController {
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['name'] = $user['name'];
                 $_SESSION['role'] = $user['role'];
+                loadPermissions($user['role']);
                 redirect('dashboard');
             } else {
                 flash('error', 'Username atau password salah.');
             }
         }
 
-        require __DIR__ . '/../views/auth/login.php';
+        require __DIR__ . '/../../views/auth/login.php';
     }
 
     public function logout() {

@@ -22,9 +22,34 @@
 <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Toastr -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>
 $(function() {
+    // Toastr config
+    toastr.options = {
+        closeButton: true,
+        progressBar: true,
+        positionClass: 'toast-top-right',
+        timeOut: 3000,
+        showMethod: 'slideDown',
+        hideMethod: 'slideUp'
+    };
+
+    // Flash messages: success → Toastr, error → SweetAlert
+    <?php if ($flashSuccess = flash('success')): ?>
+        toastr.success('<?= e($flashSuccess) ?>');
+    <?php endif; ?>
+    <?php if ($flashError = flash('error')): ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '<?= e($flashError) ?>',
+            confirmButtonColor: '#d33'
+        });
+    <?php endif; ?>
+
     // Init DataTables
     if ($('#dataTable').length) {
         $('#dataTable').DataTable({
@@ -38,7 +63,7 @@ $(function() {
     // Init Select2
     $('.select2').select2({ theme: 'bootstrap4' });
 
-    // Confirm delete
+    // Confirm delete with SweetAlert
     $(document).on('click', '.btn-delete', function(e) {
         e.preventDefault();
         var form = $(this).closest('form');

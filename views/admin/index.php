@@ -19,19 +19,6 @@
 
     <section class="content">
         <div class="container-fluid">
-            <?php if ($msg = flash('success')): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <i class="fas fa-check-circle mr-1"></i> <?= e($msg) ?>
-            </div>
-            <?php endif; ?>
-            <?php if ($err = flash('error')): ?>
-            <div class="alert alert-danger alert-dismissible fade show">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                <i class="fas fa-exclamation-triangle mr-1"></i> <?= e($err) ?>
-            </div>
-            <?php endif; ?>
-
             <!-- Step 1: Pilih Ekspedisi -->
             <div class="card card-outline card-success">
                 <div class="card-header">

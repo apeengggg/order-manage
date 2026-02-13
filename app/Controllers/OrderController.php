@@ -1,6 +1,8 @@
 <?php
-require_once __DIR__ . '/../models/Order.php';
-require_once __DIR__ . '/../models/Expedition.php';
+namespace App\Controllers;
+
+use App\Models\Order;
+use App\Models\Expedition;
 
 class OrderController {
     private $order;
@@ -12,6 +14,8 @@ class OrderController {
     }
 
     public function index() {
+        checkPermission('orders', 'can_view');
+
         $filters = [
             'search' => $_GET['search'] ?? '',
             'expedition_id' => $_GET['expedition_id'] ?? '',
@@ -20,10 +24,13 @@ class OrderController {
         $orders = $this->order->getAll($filters);
         $expeditions = $this->expedition->getAll();
         $pageTitle = 'List Order';
-        require __DIR__ . '/../views/orders/index.php';
+        require __DIR__ . '/../../views/orders/index.php';
     }
 
     public function create() {
+        checkPermission('orders-create', 'can_view');
+        checkPermission('orders', 'can_add');
+
         $expeditions = $this->expedition->getAll();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,11 +47,10 @@ class OrderController {
                 'created_by' => auth('user_id')
             ];
 
-            // Validation
             if (empty($data['customer_name']) || empty($data['customer_phone']) || empty($data['customer_address']) || empty($data['product_name'])) {
                 flash('error', 'Semua field wajib harus diisi.');
                 $pageTitle = 'Input Data Customer';
-                require __DIR__ . '/../views/orders/create.php';
+                require __DIR__ . '/../../views/orders/create.php';
                 return;
             }
 
@@ -54,17 +60,18 @@ class OrderController {
         }
 
         $pageTitle = 'Input Data Customer';
-        require __DIR__ . '/../views/orders/create.php';
+        require __DIR__ . '/../../views/orders/create.php';
     }
 
     public function edit($id) {
+        checkPermission('orders', 'can_edit');
+
         $order = $this->order->find($id);
         if (!$order) {
             flash('error', 'Order tidak ditemukan.');
             redirect('orders');
         }
 
-        // Block edit if exported
         if ($order['is_exported']) {
             flash('error', 'Order sudah diexport oleh Admin. Edit diblokir.');
             redirect('orders');
@@ -95,10 +102,12 @@ class OrderController {
         }
 
         $pageTitle = 'Edit Order';
-        require __DIR__ . '/../views/orders/edit.php';
+        require __DIR__ . '/../../views/orders/edit.php';
     }
 
     public function delete($id) {
+        checkPermission('orders', 'can_delete');
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $result = $this->order->delete($id);
             if ($result === false) {
@@ -110,8 +119,9 @@ class OrderController {
         redirect('orders');
     }
 
-    // AJAX: get order detail
     public function detail($id) {
+        checkPermission('orders', 'can_view_detail');
+
         $order = $this->order->find($id);
         header('Content-Type: application/json');
         echo json_encode($order ?: ['error' => 'Not found']);

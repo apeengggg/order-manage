@@ -12,49 +12,26 @@
             </div>
             <div class="info">
                 <a href="#" class="d-block"><?= e(auth('name')) ?></a>
+                <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= strtoupper(auth('role')) ?></span>
             </div>
         </div>
 
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
-                <li class="nav-item">
-                    <a href="<?= BASE_URL ?>dashboard" class="nav-link <?= ($pageTitle ?? '') === 'Dashboard' ? 'active' : '' ?>">
-                        <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>Dashboard</p>
-                    </a>
-                </li>
+                <?php
+                $menus = $_SESSION['menus'] ?? [];
+                $currentUrl = isset($_GET['url']) ? rtrim($_GET['url'], '/') : 'dashboard';
 
-                <?php if (isCS() || isAdmin()): ?>
-                <li class="nav-header">CUSTOMER SERVICE</li>
+                foreach ($menus as $slug => $menu):
+                    $isActive = ($currentUrl === $menu['url'] || strpos($currentUrl, $menu['url']) === 0);
+                ?>
                 <li class="nav-item">
-                    <a href="<?= BASE_URL ?>orders/create" class="nav-link <?= ($pageTitle ?? '') === 'Input Data Customer' ? 'active' : '' ?>">
-                        <i class="nav-icon fas fa-plus-circle"></i>
-                        <p>Input Data Customer</p>
+                    <a href="<?= BASE_URL . $menu['url'] ?>" class="nav-link <?= $isActive ? 'active' : '' ?>">
+                        <i class="nav-icon <?= e($menu['icon']) ?>"></i>
+                        <p><?= e($menu['name']) ?></p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="<?= BASE_URL ?>orders" class="nav-link <?= ($pageTitle ?? '') === 'List Order' ? 'active' : '' ?>">
-                        <i class="nav-icon fas fa-list-alt"></i>
-                        <p>List Order</p>
-                    </a>
-                </li>
-                <?php endif; ?>
-
-                <?php if (isAdmin()): ?>
-                <li class="nav-header">ADMIN</li>
-                <li class="nav-item">
-                    <a href="<?= BASE_URL ?>admin" class="nav-link <?= strpos($pageTitle ?? '', 'Admin') === 0 ? 'active' : '' ?>">
-                        <i class="nav-icon fas fa-file-export"></i>
-                        <p>Export Order</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="<?= BASE_URL ?>expeditions" class="nav-link <?= ($pageTitle ?? '') === 'Kelola Ekspedisi' ? 'active' : '' ?>">
-                        <i class="nav-icon fas fa-truck"></i>
-                        <p>Kelola Ekspedisi</p>
-                    </a>
-                </li>
-                <?php endif; ?>
+                <?php endforeach; ?>
             </ul>
         </nav>
     </div>
