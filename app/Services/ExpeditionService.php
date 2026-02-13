@@ -18,7 +18,7 @@ class ExpeditionService {
         return $this->expeditionRepo->findById($id);
     }
 
-    public function create(array $data): bool {
+    public function create(array $data): int {
         return $this->expeditionRepo->create($data);
     }
 

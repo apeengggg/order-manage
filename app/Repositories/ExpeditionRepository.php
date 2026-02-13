@@ -18,9 +18,10 @@ class ExpeditionRepository {
         return $stmt->fetch() ?: null;
     }
 
-    public function create(array $data): bool {
+    public function create(array $data): int {
         $stmt = $this->db->prepare("INSERT INTO expeditions (name, code) VALUES (?, ?)");
-        return $stmt->execute([$data['name'], strtoupper($data['code'])]);
+        $stmt->execute([$data['name'], strtoupper($data['code'])]);
+        return (int) $this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): bool {

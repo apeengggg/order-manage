@@ -26,7 +26,7 @@
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-plus mr-1"></i> Tambah Ekspedisi</h3>
                         </div>
-                        <form method="POST" action="<?= BASE_URL ?>expeditions/create">
+                        <form method="POST" action="<?= BASE_URL ?>expeditions/create" enctype="multipart/form-data">
                             <div class="card-body">
                                 <div class="form-group">
                                     <label>Nama Ekspedisi</label>
@@ -35,6 +35,17 @@
                                 <div class="form-group">
                                     <label>Kode</label>
                                     <input type="text" name="code" class="form-control" required placeholder="Contoh: JNE" maxlength="20">
+                                </div>
+                                <div class="form-group">
+                                    <label>Foto / Logo</label>
+                                    <div class="text-center mb-2">
+                                        <img id="createPhotoPreview" src="" alt="" style="max-width:100%;max-height:150px;display:none;border-radius:4px;">
+                                    </div>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="createPhotoInput" name="photo" accept="image/*">
+                                        <label class="custom-file-label" for="createPhotoInput">Pilih foto...</label>
+                                    </div>
+                                    <small class="text-muted">Opsional. Maks 5MB. Format: jpg, png, gif, webp</small>
                                 </div>
                             </div>
                             <div class="card-footer">
@@ -57,6 +68,7 @@
                                 <thead>
                                     <tr>
                                         <th width="40">#</th>
+                                        <th width="60">Foto</th>
                                         <th>Nama</th>
                                         <th>Kode</th>
                                         <th width="200">Aksi</th>
@@ -64,8 +76,22 @@
                                 </thead>
                                 <tbody>
                                     <?php foreach ($expeditions as $i => $exp): ?>
+                                    <?php $photo = $photosMap[$exp['id']] ?? null; ?>
                                     <tr>
                                         <td><?= $i + 1 ?></td>
+                                        <td>
+                                            <?php if ($photo && $photo['thumb_url']): ?>
+                                                <img src="<?= $photo['thumb_url'] ?>" alt="<?= e($exp['name']) ?>"
+                                                     style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer;"
+                                                     class="img-preview-thumb"
+                                                     data-url="<?= $photo['url'] ?>"
+                                                     data-name="<?= e($exp['name']) ?>">
+                                            <?php else: ?>
+                                                <div style="width:40px;height:40px;background:#e9ecef;border-radius:4px;display:flex;align-items:center;justify-content:center;">
+                                                    <i class="fas fa-truck text-muted"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <span class="exp-name-<?= $exp['id'] ?>"><?= e($exp['name']) ?></span>
                                         </td>
@@ -82,7 +108,9 @@
                                             <button type="button" class="btn btn-sm btn-warning btn-edit-exp"
                                                 data-action="<?= BASE_URL ?>expeditions/update/<?= $exp['id'] ?>"
                                                 data-name="<?= e($exp['name']) ?>"
-                                                data-code="<?= e($exp['code']) ?>">
+                                                data-code="<?= e($exp['code']) ?>"
+                                                data-photo-thumb="<?= $photo ? $photo['thumb_url'] : '' ?>"
+                                                data-photo-url="<?= $photo ? $photo['url'] : '' ?>">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <form method="POST" action="<?= BASE_URL ?>expeditions/delete/<?= $exp['id'] ?>" class="d-inline">
@@ -94,7 +122,7 @@
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($expeditions)): ?>
-                                    <tr><td colspan="4" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
+                                    <tr><td colspan="5" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -109,7 +137,7 @@
 <!-- Modal Edit -->
 <div class="modal fade" id="editExpModal" tabindex="-1">
     <div class="modal-dialog">
-        <form method="POST" id="editExpForm">
+        <form method="POST" id="editExpForm" enctype="multipart/form-data">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title"><i class="fas fa-edit mr-1"></i> Edit Ekspedisi</h5>
@@ -123,6 +151,20 @@
                     <div class="form-group">
                         <label>Kode</label>
                         <input type="text" name="code" id="editExpCode" class="form-control" required maxlength="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Foto / Logo</label>
+                        <div class="text-center mb-2">
+                            <img id="editPhotoPreview" src="" alt="" style="max-width:100%;max-height:150px;display:none;border-radius:4px;">
+                            <div id="editPhotoPlaceholder" class="text-muted py-3" style="display:none;">
+                                <i class="fas fa-image fa-2x"></i><br><small>Belum ada foto</small>
+                            </div>
+                        </div>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="editPhotoInput" name="photo" accept="image/*">
+                            <label class="custom-file-label" for="editPhotoInput">Pilih foto baru...</label>
+                        </div>
+                        <small class="text-muted">Kosongkan jika tidak ingin mengganti foto. Maks 5MB.</small>
                     </div>
                 </div>
                 <div class="modal-footer">

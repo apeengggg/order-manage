@@ -37,6 +37,30 @@ class FileRepository {
         return $stmt->fetchAll();
     }
 
+    /**
+     * Get the latest file per module_id for a set of IDs
+     */
+    public function findLatestByModuleIds(string $module, array $moduleIds): array {
+        if (empty($moduleIds)) return [];
+        $placeholders = implode(',', array_fill(0, count($moduleIds), '?'));
+        $params = array_merge([$module], $moduleIds);
+        $stmt = $this->db->prepare(
+            "SELECT f.* FROM files f
+             INNER JOIN (
+                 SELECT module_id, MAX(id) as max_id
+                 FROM files WHERE module = ? AND module_id IN ($placeholders)
+                 GROUP BY module_id
+             ) latest ON f.id = latest.max_id"
+        );
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row['module_id']] = $row;
+        }
+        return $map;
+    }
+
     public function findById(int $id): ?array {
         $stmt = $this->db->prepare("SELECT * FROM files WHERE id = ?");
         $stmt->execute([$id]);

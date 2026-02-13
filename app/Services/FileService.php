@@ -112,6 +112,27 @@ class FileService {
     }
 
     /**
+     * Get a map of latest file per module_id (for listing pages)
+     * @return array keyed by module_id
+     */
+    public function getFilesMap(string $module, array $moduleIds): array {
+        $map = $this->fileRepo->findLatestByModuleIds($module, $moduleIds);
+        foreach ($map as $moduleId => &$file) {
+            $file['thumb_url'] = $this->getThumbnailUrl($file);
+            $file['url'] = $this->getFileUrl($file);
+        }
+        return $map;
+    }
+
+    /**
+     * Replace all files for a module record (delete old, upload new)
+     */
+    public function replaceFile(array $fileData, string $module, int $moduleId, ?int $uploadedBy = null): array {
+        $this->deleteModuleFiles($module, $moduleId);
+        return $this->upload($fileData, $module, $moduleId, $uploadedBy);
+    }
+
+    /**
      * Delete a file (DB + storage + thumbnail)
      */
     public function deleteFile(int $id): bool {

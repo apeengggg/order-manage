@@ -2,15 +2,77 @@
  * expeditions.js - Expedition management page
  */
 $(function() {
-    // Edit expedition
+
+    // ========================================
+    // Photo preview helper (reusable)
+    // ========================================
+    function previewPhoto(input, previewImg) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.attr('src', e.target.result).show();
+            };
+            reader.readAsDataURL(input.files[0]);
+            $(input).next('.custom-file-label').text(input.files[0].name);
+        }
+    }
+
+    // Create form: photo preview
+    $('#createPhotoInput').on('change', function() {
+        previewPhoto(this, $('#createPhotoPreview'));
+    });
+
+    // Edit modal: photo preview on new file select
+    $('#editPhotoInput').on('change', function() {
+        previewPhoto(this, $('#editPhotoPreview'));
+        $('#editPhotoPlaceholder').hide();
+    });
+
+    // ========================================
+    // Edit expedition modal
+    // ========================================
     $('.btn-edit-exp').on('click', function() {
-        $('#editExpName').val($(this).data('name'));
-        $('#editExpCode').val($(this).data('code'));
-        $('#editExpForm').attr('action', $(this).data('action'));
+        var $btn = $(this);
+        $('#editExpName').val($btn.data('name'));
+        $('#editExpCode').val($btn.data('code'));
+        $('#editExpForm').attr('action', $btn.data('action'));
+
+        // Reset file input
+        $('#editPhotoInput').val('');
+        $('#editPhotoInput').next('.custom-file-label').text('Pilih foto baru...');
+
+        // Show current photo or placeholder
+        var thumbUrl = $btn.data('photo-thumb');
+        if (thumbUrl) {
+            $('#editPhotoPreview').attr('src', thumbUrl).show();
+            $('#editPhotoPlaceholder').hide();
+        } else {
+            $('#editPhotoPreview').hide();
+            $('#editPhotoPlaceholder').show();
+        }
+
         $('#editExpModal').modal('show');
     });
 
+    // ========================================
+    // Click thumbnail in table to preview original
+    // ========================================
+    $(document).on('click', '.img-preview-thumb', function() {
+        var url = $(this).data('url');
+        var name = $(this).data('name');
+        Swal.fire({
+            title: name,
+            imageUrl: url,
+            imageAlt: name,
+            width: 'auto',
+            showConfirmButton: false,
+            showCloseButton: true
+        });
+    });
+
+    // ========================================
     // File attachment modal
+    // ========================================
     $('.btn-files-exp').on('click', function() {
         var expId = $(this).data('id');
         var expName = $(this).data('name');
