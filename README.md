@@ -57,14 +57,24 @@ define('DB_PASS', '');         // sesuaikan password
 define('DB_NAME', 'order_management');
 ```
 
-### 5. Konfigurasi Web Server
+### 5. Jalankan Server
+
+**Cara Tercepat - PHP Built-in Server:**
+
+```bash
+php -S localhost:8000 -t public public/router.php
+```
+
+Buka: `http://localhost:8000`
 
 **Apache (XAMPP/Laragon):**
 - Pastikan `mod_rewrite` aktif
-- Arahkan DocumentRoot ke folder project, atau akses via `http://localhost/order-management/`
+- Arahkan DocumentRoot ke folder `public/`, atau akses via `http://localhost/order-management/public/`
 
 **Nginx:**
 ```nginx
+root /path/to/project/public;
+
 location / {
     try_files $uri $uri/ /index.php?url=$uri&$args;
 }
@@ -119,13 +129,17 @@ project/
 │   ├── expeditions/index.php
 │   ├── permissions/index.php # Matrix permission per role
 │   └── modules/index.php    # Kelola menu + icon picker
+├── public/
+│   ├── index.php            # Front controller (document root)
+│   ├── router.php           # Router untuk PHP built-in server
+│   └── .htaccess            # URL rewriting (Apache)
 ├── vendor/                  # Composer autoload (auto-generated)
 ├── database.sql             # SQL schema + seed data
 ├── composer.json            # PSR-4 autoload config
-├── .htaccess                # URL rewriting
+├── .htaccess                # Root redirect ke public/
 ├── .env.example             # Template environment
 ├── .gitignore
-├── index.php                # Router utama
+├── index.php                # Fallback redirect ke public/
 └── README.md
 ```
 

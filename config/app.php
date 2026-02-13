@@ -1,10 +1,19 @@
 <?php
 session_start();
 
-define('BASE_URL', '//' . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\') . '/');
+// ROOT_PATH defined in public/index.php, fallback for direct access
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__));
+}
+
+// BASE_URL: works for both Apache subdirectory and PHP built-in server
+$scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '//' . $_SERVER['HTTP_HOST'] . $scriptDir . '/');
+}
 define('APP_NAME', 'Order Management System');
 
-require_once __DIR__ . '/database.php';
+require_once ROOT_PATH . '/config/database.php';
 
 // Auto-load helpers
 function redirect($path) {
