@@ -107,25 +107,28 @@ class FileController {
     /**
      * Serve file inline (for thumbnails/preview): GET /files/serve/{path}
      */
-    public function serve($path = null) {
-        // Path comes URL-encoded from the route
-        $relativePath = urldecode($_GET['path'] ?? $path ?? '');
+    public function serve($id = null) {
+        // Path comes from query string: /files/serve?path=expeditions/1/file.jpg
+        $relativePath = $_GET['path'] ?? '';
         if (empty($relativePath)) {
             http_response_code(404);
             exit;
         }
 
+        // Sanitize: remove directory traversal attempts
+        $relativePath = str_replace(['../', '..\\', '..'], '', $relativePath);
+
         $fullPath = ROOT_PATH . '/storage/uploads/' . $relativePath;
 
-        // Security: prevent directory traversal
-        $realBase = realpath(ROOT_PATH . '/storage/uploads');
-        $realPath = realpath($fullPath);
-        if (!$realPath || strpos($realPath, $realBase) !== 0) {
+        if (!file_exists($fullPath) || !is_file($fullPath)) {
             http_response_code(404);
             exit;
         }
 
-        if (!file_exists($fullPath)) {
+        // Security: ensure resolved path is within uploads directory
+        $realBase = realpath(ROOT_PATH . '/storage/uploads');
+        $realPath = realpath($fullPath);
+        if ($realBase === false || $realPath === false || strpos($realPath, $realBase) !== 0) {
             http_response_code(404);
             exit;
         }

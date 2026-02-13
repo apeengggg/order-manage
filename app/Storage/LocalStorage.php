@@ -36,8 +36,8 @@ class LocalStorage implements StorageInterface {
     }
 
     public function url(string $path): string {
-        // Files are served via FileController (not publicly accessible)
-        return BASE_URL . 'files/serve/' . str_replace('\\', '/', $path);
+        // Files are served via FileController by encoded path (no file extension in URL)
+        return BASE_URL . 'files/serve?path=' . urlencode(str_replace('\\', '/', $path));
     }
 
     public function getFullPath(string $path): string {

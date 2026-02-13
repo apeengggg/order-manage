@@ -36,12 +36,6 @@ $page = $segments[0] ?? 'dashboard';
 $action = $segments[1] ?? 'index';
 $id = $segments[2] ?? null;
 
-// Handle files/serve with nested path (e.g. files/serve/expeditions/1/thumb_xxx.jpg)
-if ($page === 'files' && $action === 'serve' && count($segments) > 2) {
-    $_GET['path'] = implode('/', array_slice($segments, 2));
-    $id = null;
-}
-
 // Auth check - redirect to login if not logged in
 if (!isLoggedIn() && $page !== 'auth') {
     redirect('auth/login');
