@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="base-url" content="<?= BASE_URL ?>">
     <title><?= e($pageTitle ?? 'Dashboard') ?> | <?= APP_NAME ?></title>
 
     <!-- Google Font -->

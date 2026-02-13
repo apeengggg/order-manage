@@ -17,6 +17,7 @@ use App\Controllers\AdminController;
 use App\Controllers\ExpeditionController;
 use App\Controllers\PermissionController;
 use App\Controllers\ModuleController;
+use App\Controllers\FileController;
 
 // Parse URL from query string OR REQUEST_URI
 $url = '';
@@ -34,6 +35,12 @@ $segments = $url ? explode('/', $url) : [];
 $page = $segments[0] ?? 'dashboard';
 $action = $segments[1] ?? 'index';
 $id = $segments[2] ?? null;
+
+// Handle files/serve with nested path (e.g. files/serve/expeditions/1/thumb_xxx.jpg)
+if ($page === 'files' && $action === 'serve' && count($segments) > 2) {
+    $_GET['path'] = implode('/', array_slice($segments, 2));
+    $id = null;
+}
 
 // Auth check - redirect to login if not logged in
 if (!isLoggedIn() && $page !== 'auth') {
@@ -81,13 +88,23 @@ switch ($page) {
         $ctrl = new ModuleController();
         break;
 
-    default:
-        redirect('dashboard');
+    case 'files':
+        if (!isLoggedIn()) redirect('auth/login');
+        $ctrl = new FileController();
         break;
+
+    default:
+        http_response_code(404);
+        require ROOT_PATH . '/views/errors/404.php';
+        exit;
 }
 
 if (method_exists($ctrl, $action)) {
     $ctrl->$action($id);
-} else {
+} elseif ($action === 'index') {
     $ctrl->index();
+} else {
+    http_response_code(404);
+    require ROOT_PATH . '/views/errors/404.php';
+    exit;
 }

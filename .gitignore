@@ -18,6 +18,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Storage uploads (keep directory, ignore contents)
+/storage/uploads/*
+!/storage/uploads/.gitkeep
+
 # Images (flowchart references)
 *.jpeg
 *.jpg

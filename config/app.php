@@ -6,12 +6,28 @@ if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__));
 }
 
+// Load .env
+$dotenv = Dotenv\Dotenv::createImmutable(ROOT_PATH);
+$dotenv->safeLoad();
+
+/**
+ * Get environment variable with default fallback
+ */
+function env(string $key, $default = null) {
+    $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
+    if ($value === false) return $default;
+    // Cast booleans
+    if ($value === 'true') return 'true';
+    if ($value === 'false') return 'false';
+    return $value;
+}
+
 // BASE_URL: works for both Apache subdirectory and PHP built-in server
 $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
 if (!defined('BASE_URL')) {
     define('BASE_URL', '//' . $_SERVER['HTTP_HOST'] . $scriptDir . '/');
 }
-define('APP_NAME', 'Order Management System');
+define('APP_NAME', env('APP_NAME', 'Order Management System'));
 
 require_once ROOT_PATH . '/config/database.php';
 
@@ -85,7 +101,15 @@ function hasPermission($moduleSlug, $type = 'can_view') {
  */
 function checkPermission($moduleSlug, $type = 'can_view') {
     if (!hasPermission($moduleSlug, $type)) {
-        flash('error', 'Anda tidak memiliki akses untuk melakukan aksi ini.');
-        redirect('dashboard');
+        // For AJAX requests, return JSON
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            http_response_code(403);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Akses ditolak.']);
+            exit;
+        }
+        http_response_code(403);
+        require ROOT_PATH . '/views/errors/403.php';
+        exit;
     }
 }

@@ -91,6 +91,23 @@ CREATE TABLE `role_permissions` (
 ) ENGINE=InnoDB;
 
 -- ============================================
+-- Table: files (Generic file storage for all modules)
+-- ============================================
+CREATE TABLE `files` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `module` VARCHAR(50) NOT NULL COMMENT 'Module name e.g. expeditions, orders',
+  `module_id` INT NOT NULL COMMENT 'ID of the related record in the module',
+  `file_name` VARCHAR(255) NOT NULL COMMENT 'Original file name',
+  `file_path` VARCHAR(500) NOT NULL COMMENT 'Stored file path relative to uploads/',
+  `file_type` VARCHAR(100) DEFAULT NULL COMMENT 'MIME type',
+  `file_size` INT DEFAULT 0 COMMENT 'File size in bytes',
+  `uploaded_by` INT DEFAULT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  INDEX `idx_module` (`module`, `module_id`)
+) ENGINE=InnoDB;
+
+-- ============================================
 -- Default Data
 -- ============================================
 

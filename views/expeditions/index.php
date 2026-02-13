@@ -59,7 +59,7 @@
                                         <th width="40">#</th>
                                         <th>Nama</th>
                                         <th>Kode</th>
-                                        <th width="160">Aksi</th>
+                                        <th width="200">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -73,6 +73,12 @@
                                             <code class="exp-code-<?= $exp['id'] ?>"><?= e($exp['code']) ?></code>
                                         </td>
                                         <td>
+                                            <button type="button" class="btn btn-sm btn-info btn-files-exp"
+                                                data-id="<?= $exp['id'] ?>"
+                                                data-name="<?= e($exp['name']) ?>"
+                                                title="File Attachment">
+                                                <i class="fas fa-paperclip"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-warning btn-edit-exp"
                                                 data-action="<?= BASE_URL ?>expeditions/update/<?= $exp['id'] ?>"
                                                 data-name="<?= e($exp['name']) ?>"
@@ -128,5 +134,20 @@
     </div>
 </div>
 
-<?php $pageScripts = ['expeditions.js']; ?>
+<!-- Modal Files -->
+<div class="modal fade" id="filesExpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h5 class="modal-title"><i class="fas fa-paperclip mr-1"></i> File Attachment - <span id="filesExpName"></span></h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="expedition-file-section"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php $pageScripts = ['file-upload.js', 'expeditions.js']; ?>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
