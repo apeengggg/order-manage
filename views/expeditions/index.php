@@ -74,7 +74,7 @@
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-warning btn-edit-exp"
-                                                data-id="<?= $exp['id'] ?>"
+                                                data-action="<?= BASE_URL ?>expeditions/update/<?= $exp['id'] ?>"
                                                 data-name="<?= e($exp['name']) ?>"
                                                 data-code="<?= e($exp['code']) ?>">
                                                 <i class="fas fa-edit"></i>
@@ -128,16 +128,5 @@
     </div>
 </div>
 
+<?php $pageScripts = ['expeditions.js']; ?>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
-
-<script>
-$(function() {
-    $('.btn-edit-exp').on('click', function() {
-        var id = $(this).data('id');
-        $('#editExpName').val($(this).data('name'));
-        $('#editExpCode').val($(this).data('code'));
-        $('#editExpForm').attr('action', '<?= BASE_URL ?>expeditions/update/' + id);
-        $('#editExpModal').modal('show');
-    });
-});
-</script>

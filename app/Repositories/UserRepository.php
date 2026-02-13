@@ -1,28 +1,22 @@
 <?php
-namespace App\Models;
+namespace App\Repositories;
 
-use PDO;
-
-class User {
+class UserRepository {
     private $db;
 
     public function __construct() {
         $this->db = getDB();
     }
 
-    public function findByUsername($username) {
+    public function findByUsername(string $username): ?array {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->execute([$username]);
-        return $stmt->fetch();
+        return $stmt->fetch() ?: null;
     }
 
-    public function findById($id) {
+    public function findById(int $id): ?array {
         $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
         $stmt->execute([$id]);
-        return $stmt->fetch();
-    }
-
-    public function verifyPassword($password, $hash) {
-        return password_verify($password, $hash);
+        return $stmt->fetch() ?: null;
     }
 }

@@ -25,6 +25,8 @@
         .table td { vertical-align: middle !important; }
         .badge-exported { background-color: #28a745; color: #fff; }
         .badge-pending { background-color: #ffc107; color: #333; }
+        .icon-selectable:hover, .icon-selectable.active { background-color: #007bff !important; color: #fff; }
+        .icon-selectable:hover i, .icon-selectable.active i { color: #fff !important; }
     </style>
 </head>
 <body class="hold-transition sidebar-mini layout-fixed layout-navbar-fixed">

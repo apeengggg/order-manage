@@ -172,49 +172,5 @@ $permTypes = [
     </section>
 </div>
 
+<?php $pageScripts = ['permissions.js']; ?>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
-
-<script>
-$(function() {
-    // Toggle all checkboxes in a row
-    $('.toggle-all-row').on('change', function() {
-        var row = $(this).data('row');
-        var checked = this.checked;
-        $('input.perm-checkbox[data-row="' + row + '"]').prop('checked', checked);
-    });
-
-    // Update "all" checkbox when individual checkboxes change
-    $('.perm-checkbox').on('change', function() {
-        var row = $(this).data('row');
-        var total = $('input.perm-checkbox[data-row="' + row + '"]').length;
-        var checkedCount = $('input.perm-checkbox[data-row="' + row + '"]:checked').length;
-        $('input.toggle-all-row[data-row="' + row + '"]').prop('checked', total === checkedCount);
-    });
-
-    // Init "all" checkbox state
-    $('.toggle-all-row').each(function() {
-        var row = $(this).data('row');
-        var total = $('input.perm-checkbox[data-row="' + row + '"]').length;
-        var checkedCount = $('input.perm-checkbox[data-row="' + row + '"]:checked').length;
-        $(this).prop('checked', total === checkedCount && total > 0);
-    });
-
-    // Confirm save with SweetAlert
-    $('.permission-form').on('submit', function(e) {
-        e.preventDefault();
-        var form = this;
-        var role = $(form).find('input[name="role"]').val().toUpperCase();
-        Swal.fire({
-            title: 'Simpan Permission?',
-            text: 'Permission untuk role ' + role + ' akan diupdate.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#007bff',
-            confirmButtonText: 'Ya, Simpan!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) form.submit();
-        });
-    });
-});
-</script>

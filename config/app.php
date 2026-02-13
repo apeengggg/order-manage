@@ -64,8 +64,8 @@ function formatRupiah($num) {
  * Load permissions into session after login
  */
 function loadPermissions($role) {
-    $perm = new \App\Models\Permission();
-    $_SESSION['permissions'] = $perm->loadPermissionsForRole($role);
+    $permRepo = new \App\Repositories\PermissionRepository();
+    $_SESSION['permissions'] = $permRepo->loadPermissionsForRole($role);
     $_SESSION['menus'] = array_filter($_SESSION['permissions'], fn($p) => $p['can_view'] === 1);
 }
 

@@ -1,16 +1,14 @@
 <?php
-namespace App\Models;
+namespace App\Repositories;
 
-use PDO;
-
-class Order {
+class OrderRepository {
     private $db;
 
     public function __construct() {
         $this->db = getDB();
     }
 
-    public function getAll($filters = []) {
+    public function findAll(array $filters = []): array {
         $sql = "SELECT o.*, e.name as expedition_name, e.code as expedition_code,
                        u.name as created_by_name, ue.name as exported_by_name
                 FROM orders o
@@ -35,82 +33,55 @@ class Order {
         }
 
         $sql .= " ORDER BY o.created_at DESC";
-
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
-    public function find($id) {
+    public function findById(int $id): ?array {
         $stmt = $this->db->prepare(
             "SELECT o.*, e.name as expedition_name
-             FROM orders o
-             LEFT JOIN expeditions e ON o.expedition_id = e.id
+             FROM orders o LEFT JOIN expeditions e ON o.expedition_id = e.id
              WHERE o.id = ?"
         );
         $stmt->execute([$id]);
-        return $stmt->fetch();
+        return $stmt->fetch() ?: null;
     }
 
-    public function create($data) {
+    public function create(array $data): int {
         $stmt = $this->db->prepare(
             "INSERT INTO orders (customer_name, customer_phone, customer_address, product_name, qty, price, total, expedition_id, resi, notes, created_by)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
-            $data['customer_name'],
-            $data['customer_phone'],
-            $data['customer_address'],
-            $data['product_name'],
-            $data['qty'],
-            $data['price'],
-            $data['qty'] * $data['price'],
-            $data['expedition_id'] ?: null,
-            $data['resi'] ?? null,
-            $data['notes'] ?? null,
-            $data['created_by']
+            $data['customer_name'], $data['customer_phone'], $data['customer_address'],
+            $data['product_name'], $data['qty'], $data['price'], $data['total'],
+            $data['expedition_id'], $data['resi'], $data['notes'], $data['created_by']
         ]);
-        return $this->db->lastInsertId();
+        return (int)$this->db->lastInsertId();
     }
 
-    public function update($id, $data) {
-        $order = $this->find($id);
-        if ($order && $order['is_exported']) {
-            return false;
-        }
-
+    public function update(int $id, array $data): bool {
         $stmt = $this->db->prepare(
             "UPDATE orders SET customer_name=?, customer_phone=?, customer_address=?, product_name=?, qty=?, price=?, total=?, expedition_id=?, resi=?, notes=?
              WHERE id=? AND is_exported=0"
         );
-        return $stmt->execute([
-            $data['customer_name'],
-            $data['customer_phone'],
-            $data['customer_address'],
-            $data['product_name'],
-            $data['qty'],
-            $data['price'],
-            $data['qty'] * $data['price'],
-            $data['expedition_id'] ?: null,
-            $data['resi'] ?? null,
-            $data['notes'] ?? null,
-            $id
+        $stmt->execute([
+            $data['customer_name'], $data['customer_phone'], $data['customer_address'],
+            $data['product_name'], $data['qty'], $data['price'], $data['total'],
+            $data['expedition_id'], $data['resi'], $data['notes'], $id
         ]);
+        return $stmt->rowCount() > 0;
     }
 
-    public function delete($id) {
-        $order = $this->find($id);
-        if ($order && $order['is_exported']) {
-            return false;
-        }
-
+    public function delete(int $id): bool {
         $stmt = $this->db->prepare("DELETE FROM orders WHERE id=? AND is_exported=0");
         $stmt->execute([$id]);
         return $stmt->rowCount() > 0;
     }
 
-    public function markExported($ids, $userId) {
-        if (empty($ids)) return false;
+    public function markExported(array $ids, int $userId): int {
+        if (empty($ids)) return 0;
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->db->prepare(
             "UPDATE orders SET is_exported=1, exported_at=NOW(), exported_by=?
@@ -120,37 +91,32 @@ class Order {
         return $stmt->rowCount();
     }
 
-    public function getByExpedition($expeditionId, $exportedOnly = false) {
+    public function findByExpedition(int $expeditionId, bool $exportedOnly = false): array {
         $sql = "SELECT o.*, e.name as expedition_name, e.code as expedition_code, u.name as created_by_name
                 FROM orders o
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
                 WHERE o.expedition_id = ?";
-        $params = [$expeditionId];
-
-        if (!$exportedOnly) {
-            $sql .= " AND o.is_exported = 0";
-        }
-
+        if (!$exportedOnly) $sql .= " AND o.is_exported = 0";
         $sql .= " ORDER BY o.created_at DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $stmt->execute([$expeditionId]);
         return $stmt->fetchAll();
     }
 
-    public function countAll() {
-        return $this->db->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+    public function countAll(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM orders")->fetchColumn();
     }
 
-    public function countExported() {
-        return $this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=1")->fetchColumn();
+    public function countExported(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=1")->fetchColumn();
     }
 
-    public function countPending() {
-        return $this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=0")->fetchColumn();
+    public function countPending(): int {
+        return (int)$this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=0")->fetchColumn();
     }
 
-    public function totalRevenue() {
-        return $this->db->query("SELECT COALESCE(SUM(total),0) FROM orders")->fetchColumn();
+    public function totalRevenue(): float {
+        return (float)$this->db->query("SELECT COALESCE(SUM(total),0) FROM orders")->fetchColumn();
     }
 }

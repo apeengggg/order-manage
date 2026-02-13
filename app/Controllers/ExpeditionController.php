@@ -1,20 +1,20 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\Expedition;
+use App\Services\ExpeditionService;
 
 class ExpeditionController {
-    private $expedition;
+    private $expeditionService;
 
     public function __construct() {
-        $this->expedition = new Expedition();
+        $this->expeditionService = new ExpeditionService();
     }
 
     public function index() {
         checkPermission('expeditions', 'can_view');
-        $expeditions = $this->expedition->getAll();
+        $expeditions = $this->expeditionService->getAll();
         $pageTitle = 'Kelola Ekspedisi';
-        require __DIR__ . '/../../views/expeditions/index.php';
+        require ROOT_PATH . '/views/expeditions/index.php';
     }
 
     public function create() {
@@ -28,7 +28,7 @@ class ExpeditionController {
                 flash('error', 'Nama dan kode ekspedisi harus diisi.');
                 redirect('expeditions');
             }
-            $this->expedition->create($data);
+            $this->expeditionService->create($data);
             flash('success', 'Ekspedisi berhasil ditambahkan.');
         }
         redirect('expeditions');
@@ -41,7 +41,7 @@ class ExpeditionController {
                 'name' => trim($_POST['name'] ?? ''),
                 'code' => trim($_POST['code'] ?? '')
             ];
-            $this->expedition->update($id, $data);
+            $this->expeditionService->update($id, $data);
             flash('success', 'Ekspedisi berhasil diupdate.');
         }
         redirect('expeditions');
@@ -50,7 +50,7 @@ class ExpeditionController {
     public function delete($id) {
         checkPermission('expeditions', 'can_delete');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $this->expedition->delete($id);
+            $this->expeditionService->delete($id);
             flash('success', 'Ekspedisi berhasil dihapus.');
         }
         redirect('expeditions');

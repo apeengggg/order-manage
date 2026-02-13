@@ -24,73 +24,21 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Toastr -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<!-- App Core -->
+<script src="<?= BASE_URL ?>js/app.js"></script>
 
-<script>
-$(function() {
-    // Toastr config
-    toastr.options = {
-        closeButton: true,
-        progressBar: true,
-        positionClass: 'toast-top-right',
-        timeOut: 3000,
-        showMethod: 'slideDown',
-        hideMethod: 'slideUp'
-    };
+<?php if ($flashSuccess = flash('success')): ?>
+<script>App.handleFlash('success', '<?= e($flashSuccess) ?>');</script>
+<?php endif; ?>
+<?php if ($flashError = flash('error')): ?>
+<script>App.handleFlash('error', '<?= e($flashError) ?>');</script>
+<?php endif; ?>
 
-    // Flash messages: success → Toastr, error → SweetAlert
-    <?php if ($flashSuccess = flash('success')): ?>
-        toastr.success('<?= e($flashSuccess) ?>');
-    <?php endif; ?>
-    <?php if ($flashError = flash('error')): ?>
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: '<?= e($flashError) ?>',
-            confirmButtonColor: '#d33'
-        });
-    <?php endif; ?>
+<?php if (!empty($pageScripts)): ?>
+<?php foreach ($pageScripts as $script): ?>
+<script src="<?= BASE_URL ?>js/<?= $script ?>"></script>
+<?php endforeach; ?>
+<?php endif; ?>
 
-    // Init DataTables
-    if ($('#dataTable').length) {
-        $('#dataTable').DataTable({
-            responsive: true,
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json'
-            }
-        });
-    }
-
-    // Init Select2
-    $('.select2').select2({ theme: 'bootstrap4' });
-
-    // Confirm delete with SweetAlert
-    $(document).on('click', '.btn-delete', function(e) {
-        e.preventDefault();
-        var form = $(this).closest('form');
-        Swal.fire({
-            title: 'Yakin hapus?',
-            text: 'Data yang dihapus tidak bisa dikembalikan!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Ya, Hapus!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) form.submit();
-        });
-    });
-
-    // Auto-calculate total
-    function calcTotal() {
-        var qty = parseInt($('#qty').val()) || 0;
-        var price = parseFloat($('#price').val()) || 0;
-        var total = qty * price;
-        $('#total_display').text('Rp ' + total.toLocaleString('id-ID'));
-    }
-    $('#qty, #price').on('input', calcTotal);
-    calcTotal();
-});
-</script>
 </body>
 </html>

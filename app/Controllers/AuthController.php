@@ -1,13 +1,13 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\User;
+use App\Services\AuthService;
 
 class AuthController {
-    private $user;
+    private $authService;
 
     public function __construct() {
-        $this->user = new User();
+        $this->authService = new AuthService();
     }
 
     public function index() {
@@ -21,30 +21,23 @@ class AuthController {
             $username = trim($_POST['username'] ?? '');
             $password = $_POST['password'] ?? '';
 
-            if (empty($username) || empty($password)) {
-                flash('error', 'Username dan password harus diisi.');
-                require __DIR__ . '/../../views/auth/login.php';
-                return;
-            }
+            $user = $this->authService->attempt($username, $password);
 
-            $user = $this->user->findByUsername($username);
-            if ($user && $this->user->verifyPassword($password, $user['password'])) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['name'] = $user['name'];
-                $_SESSION['role'] = $user['role'];
-                loadPermissions($user['role']);
+            if ($user) {
+                $this->authService->login($user);
                 redirect('dashboard');
             } else {
-                flash('error', 'Username atau password salah.');
+                flash('error', empty($username) || empty($password)
+                    ? 'Username dan password harus diisi.'
+                    : 'Username atau password salah.');
             }
         }
 
-        require __DIR__ . '/../../views/auth/login.php';
+        require ROOT_PATH . '/views/auth/login.php';
     }
 
     public function logout() {
-        session_destroy();
+        $this->authService->logout();
         redirect('auth/login');
     }
 }

@@ -135,7 +135,7 @@ $faIcons = [
                                         <td><small><?= e($mod['url']) ?></small></td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-warning btn-edit-module"
-                                                data-id="<?= $mod['id'] ?>"
+                                                data-action="<?= BASE_URL ?>modules/update/<?= $mod['id'] ?>"
                                                 data-name="<?= e($mod['name']) ?>"
                                                 data-slug="<?= e($mod['slug']) ?>"
                                                 data-icon="<?= e($mod['icon']) ?>"
@@ -235,68 +235,5 @@ $faIcons = [
     </div>
 </div>
 
+<?php $pageScripts = ['modules.js']; ?>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>
-
-<style>
-    .icon-selectable:hover, .icon-selectable.active {
-        background-color: #007bff !important;
-        color: #fff;
-    }
-    .icon-selectable:hover i, .icon-selectable.active i {
-        color: #fff !important;
-    }
-</style>
-
-<script>
-$(function() {
-    var activeTarget = 'create'; // 'create' or 'edit'
-
-    // Icon picker - search
-    $('#iconSearch').on('input', function() {
-        var val = $(this).val().toLowerCase();
-        $('.icon-item').each(function() {
-            $(this).toggle($(this).data('icon').toLowerCase().includes(val));
-        });
-    });
-
-    // Icon picker - select icon
-    $(document).on('click', '.icon-selectable', function() {
-        var icon = $(this).closest('.icon-item').data('icon');
-        $('.icon-selectable').removeClass('active');
-        $(this).addClass('active');
-
-        if (activeTarget === 'edit') {
-            $('#editIconInput').val(icon);
-            $('#editIconPreview').html('<i class="' + icon + '"></i>');
-        } else {
-            $('#iconInput').val(icon);
-            $('#iconPreview').html('<i class="' + icon + '"></i>');
-        }
-        $('#iconPickerModal').modal('hide');
-    });
-
-    // Open icon picker for create form
-    $('[data-target="#iconPickerModal"]').on('click', function() {
-        activeTarget = 'create';
-    });
-
-    // Open icon picker for edit form
-    $('.btn-pick-edit-icon').on('click', function() {
-        activeTarget = 'edit';
-        $('#iconPickerModal').modal('show');
-    });
-
-    // Edit module
-    $('.btn-edit-module').on('click', function() {
-        var $btn = $(this);
-        $('#editName').val($btn.data('name'));
-        $('#editSlug').val($btn.data('slug'));
-        $('#editUrl').val($btn.data('url'));
-        $('#editIconInput').val($btn.data('icon'));
-        $('#editIconPreview').html('<i class="' + $btn.data('icon') + '"></i>');
-        $('#editSort').val($btn.data('sort'));
-        $('#editModuleForm').attr('action', '<?= BASE_URL ?>modules/update/' + $btn.data('id'));
-        $('#editModuleModal').modal('show');
-    });
-});
-</script>

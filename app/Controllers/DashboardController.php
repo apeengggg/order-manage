@@ -1,22 +1,20 @@
 <?php
 namespace App\Controllers;
 
-use App\Models\Order;
+use App\Services\OrderService;
 
 class DashboardController {
-    private $order;
+    private $orderService;
 
     public function __construct() {
-        $this->order = new Order();
+        $this->orderService = new OrderService();
     }
 
     public function index() {
-        $totalOrders = $this->order->countAll();
-        $exported = $this->order->countExported();
-        $pending = $this->order->countPending();
-        $revenue = $this->order->totalRevenue();
+        $stats = $this->orderService->getDashboardStats();
+        extract($stats); // $totalOrders, $exported, $pending, $revenue
 
         $pageTitle = 'Dashboard';
-        require __DIR__ . '/../../views/dashboard/index.php';
+        require ROOT_PATH . '/views/dashboard/index.php';
     }
 }
