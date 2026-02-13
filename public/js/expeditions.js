@@ -55,18 +55,26 @@ $(function() {
     });
 
     // ========================================
-    // Click thumbnail in table to preview original
+    // Click thumbnail in table to preview original + download
     // ========================================
     $(document).on('click', '.img-preview-thumb', function() {
         var url = $(this).data('url');
         var name = $(this).data('name');
+        var downloadUrl = $(this).data('download');
+
         Swal.fire({
             title: name,
             imageUrl: url,
             imageAlt: name,
             width: 'auto',
-            showConfirmButton: false,
-            showCloseButton: true
+            showCloseButton: true,
+            showConfirmButton: !!downloadUrl,
+            confirmButtonText: '<i class="fas fa-download mr-1"></i> Download Original',
+            confirmButtonColor: '#007bff'
+        }).then(function(result) {
+            if (result.isConfirmed && downloadUrl) {
+                window.location.href = downloadUrl;
+            }
         });
     });
 

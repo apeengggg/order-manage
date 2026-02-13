@@ -99,6 +99,14 @@ function hasPermission($moduleSlug, $type = 'can_view') {
 /**
  * Abort with permission denied if no permission
  */
+/**
+ * Laravel-like validate helper
+ * @return \App\Validation\Validator
+ */
+function validate(array $data, array $rules, array $messages = [], array $attributes = []): \App\Validation\Validator {
+    return new \App\Validation\Validator($data, $rules, $messages, $attributes);
+}
+
 function checkPermission($moduleSlug, $type = 'can_view') {
     if (!hasPermission($moduleSlug, $type)) {
         // For AJAX requests, return JSON

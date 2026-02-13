@@ -56,9 +56,9 @@ class FileService {
             return ['success' => false, 'message' => 'Gagal menyimpan file.', 'file_id' => null];
         }
 
-        // Generate thumbnail for images
+        // Generate thumbnail for images (in separate thumbnails/ folder)
         if (self::isImage($file['type'])) {
-            $thumbRelPath = $module . '/' . $moduleId . '/thumb_' . $storedName;
+            $thumbRelPath = 'thumbnails/' . $module . '/' . $moduleId . '/' . $storedName;
             $this->createAndStoreThumbnail($file['tmp_name'], $thumbRelPath);
         }
 
@@ -166,8 +166,8 @@ class FileService {
     public function getThumbnailUrl(array $file): ?string {
         if (!self::isImage($file['file_type'])) return null;
 
-        $dir = dirname($file['file_path']);
-        $thumbPath = $dir . '/thumb_' . basename($file['file_path']);
+        // Thumbnails stored in thumbnails/{module}/{id}/{filename}
+        $thumbPath = 'thumbnails/' . $file['file_path'];
 
         if ($this->storage->exists($thumbPath)) {
             return $this->storage->url($thumbPath);
@@ -201,9 +201,8 @@ class FileService {
 
     private function removeFromStorage(array $file): void {
         $this->storage->delete($file['file_path']);
-        // Remove thumbnail
-        $dir = dirname($file['file_path']);
-        $thumbPath = $dir . '/thumb_' . basename($file['file_path']);
+        // Remove thumbnail from separate folder
+        $thumbPath = 'thumbnails/' . $file['file_path'];
         $this->storage->delete($thumbPath);
     }
 

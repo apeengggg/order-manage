@@ -85,6 +85,7 @@
                                                      style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer;"
                                                      class="img-preview-thumb"
                                                      data-url="<?= $photo['url'] ?>"
+                                                     data-download="<?= BASE_URL ?>files/download/<?= $photo['id'] ?>"
                                                      data-name="<?= e($exp['name']) ?>">
                                             <?php else: ?>
                                                 <div style="width:40px;height:40px;background:#e9ecef;border-radius:4px;display:flex;align-items:center;justify-content:center;">

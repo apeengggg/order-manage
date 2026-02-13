@@ -28,15 +28,20 @@ class ExpeditionController {
     public function create() {
         checkPermission('expeditions', 'can_add');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'name' => trim($_POST['name'] ?? ''),
-                'code' => trim($_POST['code'] ?? '')
-            ];
-            if (empty($data['name']) || empty($data['code'])) {
-                flash('error', 'Nama dan kode ekspedisi harus diisi.');
+            $v = validate($_POST, [
+                'name' => 'required|string|min:2|max:100',
+                'code' => 'required|string|min:2|max:20|alpha_dash',
+            ], [], [
+                'name' => 'nama ekspedisi',
+                'code' => 'kode ekspedisi',
+            ]);
+
+            if ($v->fails()) {
+                flash('error', $v->firstError());
                 redirect('expeditions');
             }
 
+            $data = $v->validated();
             $newId = $this->expeditionService->create($data);
 
             // Upload photo if provided
@@ -56,10 +61,20 @@ class ExpeditionController {
     public function update($id) {
         checkPermission('expeditions', 'can_edit');
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = [
-                'name' => trim($_POST['name'] ?? ''),
-                'code' => trim($_POST['code'] ?? '')
-            ];
+            $v = validate($_POST, [
+                'name' => 'required|string|min:2|max:100',
+                'code' => 'required|string|min:2|max:20|alpha_dash',
+            ], [], [
+                'name' => 'nama ekspedisi',
+                'code' => 'kode ekspedisi',
+            ]);
+
+            if ($v->fails()) {
+                flash('error', $v->firstError());
+                redirect('expeditions');
+            }
+
+            $data = $v->validated();
             $this->expeditionService->update($id, $data);
 
             // Upload new photo if provided (replaces old)
