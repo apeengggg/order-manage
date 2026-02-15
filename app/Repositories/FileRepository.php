@@ -1,6 +1,8 @@
 <?php
 namespace App\Repositories;
 
+use App\TenantContext;
+
 class FileRepository {
     private $db;
 
@@ -10,10 +12,11 @@ class FileRepository {
 
     public function create(array $data): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO files (module, module_id, file_name, file_path, file_type, file_size, uploaded_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO files (tenant_id, module, module_id, file_name, file_path, file_type, file_size, uploaded_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
+            TenantContext::id(),
             $data['module'],
             $data['module_id'],
             $data['file_name'],
@@ -30,25 +33,22 @@ class FileRepository {
             "SELECT f.*, u.name AS uploader_name
              FROM files f
              LEFT JOIN users u ON u.id = f.uploaded_by
-             WHERE f.module = ? AND f.module_id = ?
+             WHERE f.module = ? AND f.module_id = ? AND f.tenant_id = ?
              ORDER BY f.created_at DESC"
         );
-        $stmt->execute([$module, $moduleId]);
+        $stmt->execute([$module, $moduleId, TenantContext::id()]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Get the latest file per module_id for a set of IDs
-     */
     public function findLatestByModuleIds(string $module, array $moduleIds): array {
         if (empty($moduleIds)) return [];
         $placeholders = implode(',', array_fill(0, count($moduleIds), '?'));
-        $params = array_merge([$module], $moduleIds);
+        $params = array_merge([$module, TenantContext::id()], $moduleIds);
         $stmt = $this->db->prepare(
             "SELECT f.* FROM files f
              INNER JOIN (
                  SELECT module_id, MAX(id) as max_id
-                 FROM files WHERE module = ? AND module_id IN ($placeholders)
+                 FROM files WHERE module = ? AND tenant_id = ? AND module_id IN ($placeholders)
                  GROUP BY module_id
              ) latest ON f.id = latest.max_id"
         );
@@ -74,8 +74,8 @@ class FileRepository {
 
     public function deleteByModule(string $module, int $moduleId): array {
         $files = $this->findByModule($module, $moduleId);
-        $stmt = $this->db->prepare("DELETE FROM files WHERE module = ? AND module_id = ?");
-        $stmt->execute([$module, $moduleId]);
+        $stmt = $this->db->prepare("DELETE FROM files WHERE module = ? AND module_id = ? AND tenant_id = ?");
+        $stmt->execute([$module, $moduleId, TenantContext::id()]);
         return $files;
     }
 }

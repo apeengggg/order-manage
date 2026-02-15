@@ -1,6 +1,8 @@
 <?php
 namespace App\Repositories;
 
+use App\TenantContext;
+
 class OrderRepository {
     private $db;
 
@@ -15,8 +17,8 @@ class OrderRepository {
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
                 LEFT JOIN users ue ON o.exported_by = ue.id
-                WHERE 1=1";
-        $params = [];
+                WHERE o.tenant_id = ?";
+        $params = [TenantContext::id()];
 
         if (!empty($filters['search'])) {
             $sql .= " AND (o.customer_name LIKE ? OR o.customer_phone LIKE ? OR o.product_name LIKE ? OR o.resi LIKE ?)";
@@ -42,18 +44,19 @@ class OrderRepository {
         $stmt = $this->db->prepare(
             "SELECT o.*, e.name as expedition_name
              FROM orders o LEFT JOIN expeditions e ON o.expedition_id = e.id
-             WHERE o.id = ?"
+             WHERE o.id = ? AND o.tenant_id = ?"
         );
-        $stmt->execute([$id]);
+        $stmt->execute([$id, TenantContext::id()]);
         return $stmt->fetch() ?: null;
     }
 
     public function create(array $data): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO orders (customer_name, customer_phone, customer_address, product_name, qty, price, total, expedition_id, resi, notes, extra_fields, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO orders (tenant_id, customer_name, customer_phone, customer_address, product_name, qty, price, total, expedition_id, resi, notes, extra_fields, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
+            TenantContext::id(),
             $data['customer_name'], $data['customer_phone'], $data['customer_address'],
             $data['product_name'], $data['qty'], $data['price'], $data['total'],
             $data['expedition_id'], $data['resi'], $data['notes'],
@@ -65,20 +68,20 @@ class OrderRepository {
     public function update(int $id, array $data): bool {
         $stmt = $this->db->prepare(
             "UPDATE orders SET customer_name=?, customer_phone=?, customer_address=?, product_name=?, qty=?, price=?, total=?, expedition_id=?, resi=?, notes=?, extra_fields=?
-             WHERE id=? AND is_exported=0"
+             WHERE id=? AND tenant_id=? AND is_exported=0"
         );
         $stmt->execute([
             $data['customer_name'], $data['customer_phone'], $data['customer_address'],
             $data['product_name'], $data['qty'], $data['price'], $data['total'],
             $data['expedition_id'], $data['resi'], $data['notes'],
-            $data['extra_fields'] ?? null, $id
+            $data['extra_fields'] ?? null, $id, TenantContext::id()
         ]);
         return $stmt->rowCount() > 0;
     }
 
     public function delete(int $id): bool {
-        $stmt = $this->db->prepare("DELETE FROM orders WHERE id=? AND is_exported=0");
-        $stmt->execute([$id]);
+        $stmt = $this->db->prepare("DELETE FROM orders WHERE id=? AND tenant_id=? AND is_exported=0");
+        $stmt->execute([$id, TenantContext::id()]);
         return $stmt->rowCount() > 0;
     }
 
@@ -87,9 +90,9 @@ class OrderRepository {
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->db->prepare(
             "UPDATE orders SET is_exported=1, exported_at=NOW(), exported_by=?
-             WHERE id IN ($placeholders) AND is_exported=0"
+             WHERE id IN ($placeholders) AND tenant_id=? AND is_exported=0"
         );
-        $stmt->execute(array_merge([$userId], $ids));
+        $stmt->execute(array_merge([$userId], $ids, [TenantContext::id()]));
         return $stmt->rowCount();
     }
 
@@ -98,27 +101,35 @@ class OrderRepository {
                 FROM orders o
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
-                WHERE o.expedition_id = ?";
+                WHERE o.expedition_id = ? AND o.tenant_id = ?";
         if (!$exportedOnly) $sql .= " AND o.is_exported = 0";
         $sql .= " ORDER BY o.created_at DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$expeditionId]);
+        $stmt->execute([$expeditionId, TenantContext::id()]);
         return $stmt->fetchAll();
     }
 
     public function countAll(): int {
-        return (int)$this->db->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ?");
+        $stmt->execute([TenantContext::id()]);
+        return (int)$stmt->fetchColumn();
     }
 
     public function countExported(): int {
-        return (int)$this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=1")->fetchColumn();
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ? AND is_exported=1");
+        $stmt->execute([TenantContext::id()]);
+        return (int)$stmt->fetchColumn();
     }
 
     public function countPending(): int {
-        return (int)$this->db->query("SELECT COUNT(*) FROM orders WHERE is_exported=0")->fetchColumn();
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ? AND is_exported=0");
+        $stmt->execute([TenantContext::id()]);
+        return (int)$stmt->fetchColumn();
     }
 
     public function totalRevenue(): float {
-        return (float)$this->db->query("SELECT COALESCE(SUM(total),0) FROM orders")->fetchColumn();
+        $stmt = $this->db->prepare("SELECT COALESCE(SUM(total),0) FROM orders WHERE tenant_id = ?");
+        $stmt->execute([TenantContext::id()]);
+        return (float)$stmt->fetchColumn();
     }
 }

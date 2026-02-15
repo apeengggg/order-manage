@@ -24,6 +24,7 @@ use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\FileController;
 use App\Controllers\SettingController;
+use App\Controllers\TenantController;
 
 // Parse URL from query string OR REQUEST_URI
 $url = '';
@@ -109,7 +110,14 @@ switch ($page) {
 
     case 'settings':
         if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('settings', 'can_view');
         $ctrl = new SettingController();
+        break;
+
+    case 'tenants':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('tenants', 'can_view');
+        $ctrl = new TenantController();
         break;
 
     default:

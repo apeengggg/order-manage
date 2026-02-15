@@ -31,6 +31,9 @@ define('APP_NAME', env('APP_NAME', 'Order Management System'));
 
 require_once ROOT_PATH . '/config/database.php';
 
+// Resolve tenant context from session
+\App\TenantContext::resolve();
+
 // Auto-load helpers
 function redirect($path) {
     header("Location: " . BASE_URL . $path);
@@ -41,12 +44,20 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
+function isSuperAdmin() {
+    return auth('role_slug') === 'superadmin' && auth('tenant_id') === null;
+}
+
 function isAdmin() {
     return (auth('role_slug') === 'admin');
 }
 
 function isCS() {
     return (auth('role_slug') === 'cs');
+}
+
+function tenantId(): ?int {
+    return \App\TenantContext::id();
 }
 
 function auth($key = null) {
@@ -87,8 +98,6 @@ function loadPermissions(int $roleId) {
 
 /**
  * Check if current user has a specific permission on a module
- * @param string $moduleSlug e.g. 'orders', 'admin-export'
- * @param string $type e.g. 'can_view', 'can_add', 'can_edit', 'can_delete', 'can_view_detail', 'can_upload', 'can_download'
  */
 function hasPermission($moduleSlug, $type = 'can_view') {
     $permissions = $_SESSION['permissions'] ?? [];
@@ -97,34 +106,45 @@ function hasPermission($moduleSlug, $type = 'can_view') {
 }
 
 /**
- * Abort with permission denied if no permission
- */
-/**
  * Laravel-like validate helper
- * @return \App\Validation\Validator
  */
 function validate(array $data, array $rules, array $messages = [], array $attributes = []): \App\Validation\Validator {
     return new \App\Validation\Validator($data, $rules, $messages, $attributes);
 }
 
 /**
- * Get app setting from database with static cache
+ * Get app setting from database with static cache (tenant-aware)
  */
 function appSetting(string $key, $default = null) {
-    static $cache = null;
-    if ($cache === null) {
-        try {
-            $db = getDB();
-            $stmt = $db->query("SELECT setting_key, setting_value FROM app_settings");
-            $cache = [];
-            foreach ($stmt->fetchAll() as $row) {
-                $cache[$row['setting_key']] = $row['setting_value'];
+    static $cache = [];
+    $tid = \App\TenantContext::id();
+    $cacheKey = ($tid ?? 'null') . ':' . $key;
+
+    if (!isset($cache[$cacheKey])) {
+        // Load all settings for this tenant at once
+        $allKey = ($tid ?? 'null') . ':__loaded__';
+        if (!isset($cache[$allKey])) {
+            try {
+                $db = getDB();
+                if ($tid !== null) {
+                    $stmt = $db->prepare("SELECT setting_key, setting_value FROM app_settings WHERE tenant_id = ?");
+                    $stmt->execute([$tid]);
+                } else {
+                    // Super admin without impersonation - no tenant settings
+                    $cache[$allKey] = true;
+                    return $default;
+                }
+                foreach ($stmt->fetchAll() as $row) {
+                    $cache[($tid ?? 'null') . ':' . $row['setting_key']] = $row['setting_value'];
+                }
+                $cache[$allKey] = true;
+            } catch (\Exception $e) {
+                return $default;
             }
-        } catch (\Exception $e) {
-            $cache = [];
         }
     }
-    return $cache[$key] ?? $default;
+
+    return $cache[$cacheKey] ?? $default;
 }
 
 function checkPermission($moduleSlug, $type = 'can_view') {

@@ -4,6 +4,7 @@ namespace App\Services;
 use App\Repositories\FileRepository;
 use App\Storage\StorageFactory;
 use App\Storage\StorageInterface;
+use App\TenantContext;
 
 class FileService {
     private $fileRepo;
@@ -47,9 +48,10 @@ class FileService {
             return ['success' => false, 'message' => 'Tipe file tidak diizinkan. Allowed: ' . implode(', ', self::ALLOWED_EXTENSIONS), 'file_id' => null];
         }
 
-        // Generate unique filename
+        // Generate unique filename with tenant prefix
         $storedName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file['name']);
-        $relativePath = $module . '/' . $moduleId . '/' . $storedName;
+        $tenantPrefix = TenantContext::id() ? TenantContext::id() . '/' : '';
+        $relativePath = $tenantPrefix . $module . '/' . $moduleId . '/' . $storedName;
 
         // Store file via storage driver
         if (!$this->storage->put($file['tmp_name'], $relativePath)) {

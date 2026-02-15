@@ -73,17 +73,24 @@
                             <h3 class="card-title"><i class="fas fa-bolt mr-1"></i> Quick Actions</h3>
                         </div>
                         <div class="card-body">
-                            <?php if (isCS() || isAdmin()): ?>
+                            <?php if (hasPermission('orders-create', 'can_view') && hasPermission('orders', 'can_add')): ?>
                             <a href="<?= BASE_URL ?>orders/create" class="btn btn-primary mr-2 mb-2">
                                 <i class="fas fa-plus mr-1"></i> Input Data Customer
                             </a>
+                            <?php endif; ?>
+                            <?php if (hasPermission('orders', 'can_view')): ?>
                             <a href="<?= BASE_URL ?>orders" class="btn btn-info mr-2 mb-2">
                                 <i class="fas fa-list mr-1"></i> List Order
                             </a>
                             <?php endif; ?>
-                            <?php if (isAdmin()): ?>
+                            <?php if (hasPermission('admin-export', 'can_view')): ?>
                             <a href="<?= BASE_URL ?>admin" class="btn btn-success mr-2 mb-2">
                                 <i class="fas fa-file-export mr-1"></i> Export Order
+                            </a>
+                            <?php endif; ?>
+                            <?php if (isSuperAdmin()): ?>
+                            <a href="<?= BASE_URL ?>tenants" class="btn btn-purple mr-2 mb-2" style="background:#6f42c1;border-color:#6f42c1;color:#fff;">
+                                <i class="fas fa-building mr-1"></i> Kelola Tenant
                             </a>
                             <?php endif; ?>
                         </div>
@@ -95,11 +102,16 @@
                             <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i> Informasi</h3>
                         </div>
                         <div class="card-body">
-                            <p class="mb-1"><strong>Role:</strong> <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= e(auth('role_name')) ?></span></p>
+                            <p class="mb-1"><strong>Role:</strong> <span class="badge badge-<?= isSuperAdmin() ? 'warning' : (isAdmin() ? 'danger' : 'info') ?>"><?= e(auth('role_name')) ?></span></p>
                             <p class="mb-1"><strong>Login sebagai:</strong> <?= e(auth('name')) ?></p>
+                            <?php if (\App\TenantContext::tenant()): ?>
+                            <p class="mb-1"><strong>Tenant:</strong> <?= e(\App\TenantContext::tenant()['name']) ?></p>
+                            <?php endif; ?>
                             <hr>
                             <small class="text-muted">
-                                <?php if (isCS()): ?>
+                                <?php if (isSuperAdmin() && \App\TenantContext::isImpersonating()): ?>
+                                    Anda sedang melihat data sebagai tenant ini. <a href="<?= BASE_URL ?>tenants/stopImpersonate">Kembali ke Super Admin</a>.
+                                <?php elseif (isCS()): ?>
                                     Anda bisa menginput data customer, melihat list order, edit dan hapus order yang belum diexport admin.
                                 <?php else: ?>
                                     Anda bisa melihat semua order, export order per ekspedisi, dan mengelola data ekspedisi.

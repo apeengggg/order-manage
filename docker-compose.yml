@@ -46,7 +46,7 @@ services:
       - "${DB_PORT:-3306}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-root_password}
-      MYSQL_DATABASE: ${DB_NAME:-order_management}
+      MYSQL_DATABASE: ${DB_NAME:-order_management_ssas}
       MYSQL_USER: ${DB_USER:-order_user}
       MYSQL_PASSWORD: ${DB_PASS:-order_password}
     volumes:

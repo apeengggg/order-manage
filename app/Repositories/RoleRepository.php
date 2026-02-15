@@ -1,6 +1,7 @@
 <?php
 namespace App\Repositories;
 
+use App\TenantContext;
 use PDO;
 
 class RoleRepository {
@@ -11,7 +12,9 @@ class RoleRepository {
     }
 
     public function findAll(): array {
-        return $this->db->query("SELECT * FROM roles ORDER BY id")->fetchAll();
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
+        $stmt->execute([TenantContext::id()]);
+        return $stmt->fetchAll();
     }
 
     public function findById(int $id): ?array {
@@ -21,25 +24,25 @@ class RoleRepository {
     }
 
     public function findBySlug(string $slug): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM roles WHERE slug = ?");
-        $stmt->execute([$slug]);
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE slug = ? AND tenant_id = ?");
+        $stmt->execute([$slug, TenantContext::id()]);
         return $stmt->fetch() ?: null;
     }
 
     public function create(array $data): int {
-        $stmt = $this->db->prepare("INSERT INTO roles (name, slug, description) VALUES (?, ?, ?)");
-        $stmt->execute([$data['name'], $data['slug'], $data['description'] ?? null]);
+        $stmt = $this->db->prepare("INSERT INTO roles (tenant_id, name, slug, description) VALUES (?, ?, ?, ?)");
+        $stmt->execute([TenantContext::id(), $data['name'], $data['slug'], $data['description'] ?? null]);
         return (int)$this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): bool {
-        $stmt = $this->db->prepare("UPDATE roles SET name=?, slug=?, description=? WHERE id=?");
-        return $stmt->execute([$data['name'], $data['slug'], $data['description'] ?? null, $id]);
+        $stmt = $this->db->prepare("UPDATE roles SET name=?, slug=?, description=? WHERE id=? AND tenant_id = ?");
+        return $stmt->execute([$data['name'], $data['slug'], $data['description'] ?? null, $id, TenantContext::id()]);
     }
 
     public function delete(int $id): bool {
-        $stmt = $this->db->prepare("DELETE FROM roles WHERE id = ?");
-        return $stmt->execute([$id]);
+        $stmt = $this->db->prepare("DELETE FROM roles WHERE id = ? AND tenant_id = ?");
+        return $stmt->execute([$id, TenantContext::id()]);
     }
 
     public function countUsers(int $roleId): int {
@@ -49,9 +52,11 @@ class RoleRepository {
     }
 
     public function findAllWithUserCount(): array {
-        return $this->db->query(
+        $stmt = $this->db->prepare(
             "SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
-             FROM roles r ORDER BY r.id"
-        )->fetchAll();
+             FROM roles r WHERE r.tenant_id = ? ORDER BY r.id"
+        );
+        $stmt->execute([TenantContext::id()]);
+        return $stmt->fetchAll();
     }
 }

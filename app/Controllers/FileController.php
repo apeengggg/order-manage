@@ -119,9 +119,10 @@ class FileController {
         $relativePath = str_replace(['../', '..\\', '..'], '', $relativePath);
 
         // Guard: only settings files (logo/bg) allowed without login
+        // Paths may be tenant-prefixed: {tenant_id}/settings/... or settings/...
         if (!isLoggedIn()) {
-            $isSettingsFile = strpos($relativePath, 'settings/') === 0
-                || strpos($relativePath, 'thumbnails/settings/') === 0;
+            $isSettingsFile = (bool)preg_match('#^(\d+/)?settings/#', $relativePath)
+                || (bool)preg_match('#^(\d+/)?thumbnails/(\d+/)?settings/#', $relativePath);
             if (!$isSettingsFile) {
                 http_response_code(403);
                 exit;

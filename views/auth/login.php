@@ -1,24 +1,45 @@
 <?php
-$_loginAppName = appSetting('app_name', APP_NAME);
-$_loginBgColor = appSetting('login_bg_color', '#667eea');
-$_loginPrimaryColor = appSetting('primary_color', '#007bff');
+// On login page, no tenant context yet. Try to detect from domain or show defaults.
+$_loginTenantId = null;
+try {
+    $db = getDB();
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    // Try to find tenant by domain
+    $stmt = $db->prepare("SELECT id FROM tenants WHERE domain = ? AND is_active = 1 LIMIT 1");
+    $stmt->execute([$host]);
+    $row = $stmt->fetch();
+    if ($row) $_loginTenantId = (int)$row['id'];
+} catch (\Exception $e) {}
 
-// Check for login background image
+// Load settings for detected tenant (or use defaults)
+$_loginAppName = APP_NAME;
+$_loginBgColor = '#667eea';
+$_loginPrimaryColor = '#007bff';
 $_loginBgUrl = null;
-$_loginBgFileId = appSetting('login_bg_file_id');
-if ($_loginBgFileId) {
-    $fs = new \App\Services\FileService();
-    $f = $fs->getFile((int)$_loginBgFileId);
-    if ($f) $_loginBgUrl = $fs->getFileUrl($f);
-}
-
-// Check for logo
 $_loginLogoUrl = null;
-$_loginLogoFileId = appSetting('logo_file_id');
-if ($_loginLogoFileId) {
-    $fs = $fs ?? new \App\Services\FileService();
-    $f = $fs->getFile((int)$_loginLogoFileId);
-    if ($f) $_loginLogoUrl = $fs->getThumbnailUrl($f) ?: $fs->getFileUrl($f);
+
+if ($_loginTenantId) {
+    try {
+        $stmt = $db->prepare("SELECT setting_key, setting_value FROM app_settings WHERE tenant_id = ?");
+        $stmt->execute([$_loginTenantId]);
+        $_loginSettings = [];
+        foreach ($stmt->fetchAll() as $r) {
+            $_loginSettings[$r['setting_key']] = $r['setting_value'];
+        }
+        $_loginAppName = $_loginSettings['app_name'] ?? APP_NAME;
+        $_loginBgColor = $_loginSettings['login_bg_color'] ?? '#667eea';
+        $_loginPrimaryColor = $_loginSettings['primary_color'] ?? '#007bff';
+
+        $fs = new \App\Services\FileService();
+        if (!empty($_loginSettings['login_bg_file_id'])) {
+            $f = $fs->getFile((int)$_loginSettings['login_bg_file_id']);
+            if ($f) $_loginBgUrl = $fs->getFileUrl($f);
+        }
+        if (!empty($_loginSettings['logo_file_id'])) {
+            $f = $fs->getFile((int)$_loginSettings['logo_file_id']);
+            if ($f) $_loginLogoUrl = $fs->getThumbnailUrl($f) ?: $fs->getFileUrl($f);
+        }
+    } catch (\Exception $e) {}
 }
 
 $_loginBgStyle = $_loginBgUrl
@@ -87,7 +108,7 @@ $_loginBgStyle = $_loginBgUrl
 
             <div class="mt-3 text-center">
                 <small class="text-muted">
-                    Default: <code>admin</code> / <code>cs1</code> / <code>cs2</code> &mdash; Password: <code>admin123</code>
+                    Default: <code>superadmin</code> / <code>admin</code> / <code>cs1</code> &mdash; Password: <code>admin123</code>
                 </small>
             </div>
         </div>

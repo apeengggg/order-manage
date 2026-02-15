@@ -1,6 +1,7 @@
 <?php
 namespace App\Repositories;
 
+use App\TenantContext;
 use PDO;
 
 class UserRepository {
@@ -11,12 +12,15 @@ class UserRepository {
     }
 
     public function findAll(): array {
-        return $this->db->query(
+        $stmt = $this->db->prepare(
             "SELECT u.*, r.name as role_name, r.slug as role_slug
              FROM users u
              LEFT JOIN roles r ON r.id = u.role_id
+             WHERE u.tenant_id = ?
              ORDER BY u.id"
-        )->fetchAll();
+        );
+        $stmt->execute([TenantContext::id()]);
+        return $stmt->fetchAll();
     }
 
     public function findByUsername(string $username): ?array {
@@ -43,9 +47,10 @@ class UserRepository {
 
     public function create(array $data): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO users (username, password, name, role_id) VALUES (?, ?, ?, ?)"
+            "INSERT INTO users (tenant_id, username, password, name, role_id) VALUES (?, ?, ?, ?, ?)"
         );
         $stmt->execute([
+            TenantContext::id(),
             $data['username'],
             $data['password'],
             $data['name'],
@@ -56,19 +61,19 @@ class UserRepository {
 
     public function update(int $id, array $data): bool {
         $stmt = $this->db->prepare(
-            "UPDATE users SET username=?, name=?, role_id=? WHERE id=?"
+            "UPDATE users SET username=?, name=?, role_id=? WHERE id=? AND tenant_id = ?"
         );
-        return $stmt->execute([$data['username'], $data['name'], $data['role_id'], $id]);
+        return $stmt->execute([$data['username'], $data['name'], $data['role_id'], $id, TenantContext::id()]);
     }
 
     public function updatePassword(int $id, string $hash): bool {
-        $stmt = $this->db->prepare("UPDATE users SET password=? WHERE id=?");
-        return $stmt->execute([$hash, $id]);
+        $stmt = $this->db->prepare("UPDATE users SET password=? WHERE id=? AND tenant_id = ?");
+        return $stmt->execute([$hash, $id, TenantContext::id()]);
     }
 
     public function delete(int $id): bool {
-        $stmt = $this->db->prepare("DELETE FROM users WHERE id=?");
-        return $stmt->execute([$id]);
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id=? AND tenant_id = ?");
+        return $stmt->execute([$id, TenantContext::id()]);
     }
 
     public function usernameExists(string $username, ?int $excludeId = null): bool {

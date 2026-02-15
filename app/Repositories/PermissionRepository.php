@@ -1,6 +1,7 @@
 <?php
 namespace App\Repositories;
 
+use App\TenantContext;
 use PDO;
 
 class PermissionRepository {
@@ -11,17 +12,23 @@ class PermissionRepository {
     }
 
     public function findAllModules(): array {
-        return $this->db->query("SELECT * FROM modules WHERE is_active=1 ORDER BY sort_order")->fetchAll();
+        $isSuperAdmin = TenantContext::isSuperAdmin() && !TenantContext::isImpersonating();
+        if ($isSuperAdmin) {
+            return $this->db->query("SELECT * FROM modules WHERE is_active=1 ORDER BY sort_order")->fetchAll();
+        }
+        return $this->db->query("SELECT * FROM modules WHERE is_active=1 AND is_superadmin_only=0 ORDER BY sort_order")->fetchAll();
     }
 
     public function findAllPermissions(): array {
-        $stmt = $this->db->query(
+        $stmt = $this->db->prepare(
             "SELECT rp.*, m.name as module_name, m.slug as module_slug, m.icon as module_icon
              FROM role_permissions rp
              INNER JOIN modules m ON m.id = rp.module_id
-             WHERE m.is_active = 1
+             INNER JOIN roles r ON r.id = rp.role_id
+             WHERE m.is_active = 1 AND (r.tenant_id = ? OR r.tenant_id IS NULL)
              ORDER BY rp.role_id, m.sort_order"
         );
+        $stmt->execute([TenantContext::id()]);
         $rows = $stmt->fetchAll();
         $grouped = [];
         foreach ($rows as $row) {
@@ -31,20 +38,30 @@ class PermissionRepository {
     }
 
     public function loadPermissionsForRole(int $roleId): array {
-        $stmt = $this->db->prepare(
-            "SELECT m.slug, m.name, m.icon, m.url, m.parent_id, m.sort_order,
+        $isSuperAdmin = false;
+        $role = $this->db->prepare("SELECT tenant_id, slug FROM roles WHERE id = ?");
+        $role->execute([$roleId]);
+        $roleData = $role->fetch();
+        if ($roleData && $roleData['slug'] === 'superadmin' && $roleData['tenant_id'] === null) {
+            $isSuperAdmin = true;
+        }
+
+        $sql = "SELECT m.slug, m.name, m.icon, m.url, m.parent_id, m.sort_order, m.is_superadmin_only,
                     rp.can_view, rp.can_add, rp.can_edit, rp.can_delete,
                     rp.can_view_detail, rp.can_upload, rp.can_download
              FROM role_permissions rp
              INNER JOIN modules m ON m.id = rp.module_id
              WHERE rp.role_id = ? AND m.is_active = 1
-             ORDER BY m.sort_order"
-        );
+             ORDER BY m.sort_order";
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$roleId]);
         $rows = $stmt->fetchAll();
 
         $permissions = [];
         foreach ($rows as $row) {
+            // Skip superadmin-only modules for non-superadmin roles
+            if ($row['is_superadmin_only'] && !$isSuperAdmin) continue;
+
             $permissions[$row['slug']] = [
                 'name' => $row['name'],
                 'icon' => $row['icon'],
@@ -81,7 +98,13 @@ class PermissionRepository {
     }
 
     public function getRoles(): array {
-        return $this->db->query("SELECT * FROM roles ORDER BY id")->fetchAll();
+        $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
+        $stmt->execute([TenantContext::id()]);
+        return $stmt->fetchAll();
+    }
+
+    public function getAllRolesAcrossTenants(): array {
+        return $this->db->query("SELECT * FROM roles ORDER BY tenant_id, id")->fetchAll();
     }
 
     public function createModule(array $data): int {

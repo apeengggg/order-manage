@@ -45,8 +45,8 @@ class PermissionService {
     public function createModule(array $data): int {
         $moduleId = $this->permRepo->createModule($data);
 
-        // Auto-create permission rows for all roles
-        $roles = $this->getRoles();
+        // Auto-create permission rows for ALL roles across ALL tenants (modules are global)
+        $roles = $this->permRepo->getAllRolesAcrossTenants();
         foreach ($roles as $role) {
             $perms = array_fill_keys(
                 ['can_view','can_add','can_edit','can_delete','can_view_detail','can_upload','can_download'],
