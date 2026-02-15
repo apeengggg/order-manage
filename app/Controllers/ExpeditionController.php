@@ -142,15 +142,59 @@ class ExpeditionController {
     /**
      * AJAX: Get template columns for an expedition
      * GET /expeditions/getTemplate/{id}
+     * For columns with >100 options, returns options_count instead of full array
      */
     public function getTemplate($id) {
         $columns = $this->templateService->getTemplateColumns((int)$id);
         $template = $this->templateService->getTemplate((int)$id);
 
+        // Trim large option lists to reduce payload
+        foreach ($columns as &$col) {
+            if ($col['input_type'] === 'select' && !empty($col['options']) && count($col['options']) > 100) {
+                $col['options_count'] = count($col['options']);
+                $col['options'] = [];
+            }
+        }
+        unset($col);
+
         $this->jsonResponse([
             'success' => !empty($columns),
             'columns' => $columns,
             'sheet_name' => $template['sheet_name'] ?? null,
+        ]);
+    }
+
+    /**
+     * AJAX: Search/paginate options for a template column (editing mode)
+     * GET /expeditions/searchTemplateOptions/{expeditionId}?position=X&search=query&page=1
+     */
+    public function searchTemplateOptions($expeditionId) {
+        $expeditionId = (int)$expeditionId;
+        $position = (int)($_GET['position'] ?? 0);
+        $search = trim($_GET['search'] ?? '');
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 50;
+
+        $options = $this->templateService->getColumnOptions($expeditionId, $position);
+
+        // Filter by search term
+        if ($search !== '') {
+            $options = array_values(array_filter($options, function($opt) use ($search) {
+                return stripos($opt, $search) !== false;
+            }));
+        }
+
+        // Paginate
+        $total = count($options);
+        $offset = ($page - 1) * $limit;
+        $paged = array_slice($options, $offset, $limit);
+
+        $this->jsonResponse([
+            'success' => true,
+            'options' => $paged,
+            'total' => $total,
+            'page' => $page,
+            'has_more' => ($offset + $limit) < $total,
         ]);
     }
 

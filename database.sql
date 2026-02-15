@@ -173,7 +173,8 @@ INSERT INTO `modules` (`id`, `name`, `slug`, `icon`, `url`, `parent_id`, `sort_o
 (5, 'Kelola Ekspedisi',   'expeditions',    'fas fa-truck',          'expeditions',       NULL, 5),
 (6, 'Kelola Modul',       'modules',        'fas fa-cubes',          'modules',           NULL, 6),
 (7, 'Kelola Permission',  'permissions',    'fas fa-user-shield',    'permissions',       NULL, 7),
-(8, 'Kelola Role',        'roles',          'fas fa-user-tag',       'roles',             NULL, 8);
+(8, 'Kelola Role',        'roles',          'fas fa-user-tag',       'roles',             NULL, 8),
+(9, 'Kelola User',        'users',          'fas fa-users',          'users',             NULL, 9);
 
 -- ============================================
 -- Default Permissions: Admin (semua akses)
@@ -186,7 +187,8 @@ INSERT INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `
 (1, 5, 1, 1, 1, 1, 1, 1, 1),
 (1, 6, 1, 1, 1, 1, 1, 1, 1),
 (1, 7, 1, 1, 1, 1, 1, 1, 1),
-(1, 8, 1, 1, 1, 1, 1, 1, 1);
+(1, 8, 1, 1, 1, 1, 1, 1, 1),
+(1, 9, 1, 1, 1, 1, 1, 1, 1);
 
 -- ============================================
 -- Default Permissions: CS (terbatas)
@@ -199,7 +201,8 @@ INSERT INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `
 (2, 5, 0, 0, 0, 0, 0, 0, 0),
 (2, 6, 0, 0, 0, 0, 0, 0, 0),
 (2, 7, 0, 0, 0, 0, 0, 0, 0),
-(2, 8, 0, 0, 0, 0, 0, 0, 0);
+(2, 8, 0, 0, 0, 0, 0, 0, 0),
+(2, 9, 0, 0, 0, 0, 0, 0, 0);
 
 
 -- ============================================
@@ -294,3 +297,13 @@ SELECT 1, id, 1, 1, 1, 1, 1, 1, 1 FROM `modules` WHERE `slug` = 'roles';
 
 INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
 SELECT 2, id, 0, 0, 0, 0, 0, 0, 0 FROM `modules` WHERE `slug` = 'roles';
+
+-- [Migration 5] Tambah modul "Kelola User"
+INSERT IGNORE INTO `modules` (`name`, `slug`, `icon`, `url`, `parent_id`, `sort_order`)
+VALUES ('Kelola User', 'users', 'fas fa-users', 'users', NULL, 9);
+
+INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
+SELECT 1, id, 1, 1, 1, 1, 1, 1, 1 FROM `modules` WHERE `slug` = 'users';
+
+INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
+SELECT 2, id, 0, 0, 0, 0, 0, 0, 0 FROM `modules` WHERE `slug` = 'users';

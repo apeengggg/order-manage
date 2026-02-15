@@ -265,6 +265,69 @@
     </div>
 </div>
 
+<!-- Modal Options Manager (for large option lists) -->
+<div class="modal fade" id="optionsManagerModal" tabindex="-1" data-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-list mr-1"></i> Kelola Opsi</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Add new option -->
+                <div class="form-group">
+                    <label><i class="fas fa-plus mr-1"></i> Tambah Opsi Baru</label>
+                    <div class="input-group">
+                        <input type="text" id="optMgrNewOption" class="form-control" placeholder="Ketik opsi baru...">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-success" id="btnAddOption">
+                                <i class="fas fa-plus mr-1"></i> Tambah
+                            </button>
+                        </div>
+                    </div>
+                    <small id="optMgrDuplicateWarning" class="text-danger" style="display:none;"></small>
+                </div>
+
+                <hr>
+
+                <!-- Search -->
+                <div class="form-group mb-2">
+                    <div class="input-group input-group-sm">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                        <input type="text" id="optMgrSearch" class="form-control" placeholder="Cari opsi...">
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted" id="optMgrStats"></small>
+                    <div id="optMgrLoadingSpinner" style="display:none;">
+                        <i class="fas fa-spinner fa-spin text-primary"></i> Memuat...
+                    </div>
+                </div>
+
+                <!-- Options list with scroll -->
+                <div id="optMgrListContainer" style="max-height:400px; overflow-y:auto; border:1px solid #dee2e6; border-radius:4px;">
+                    <div id="optMgrList"></div>
+                    <div class="text-center py-2" id="optMgrLoadMore" style="display:none;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-chevron-down mr-1"></i> Muat lebih banyak...
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="btnSaveOptions">
+                    <i class="fas fa-save mr-1"></i> Simpan Perubahan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Files -->
 <div class="modal fade" id="filesExpModal" tabindex="-1">
     <div class="modal-dialog modal-lg">

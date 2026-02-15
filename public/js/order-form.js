@@ -5,19 +5,20 @@ $(function() {
     var BASE = $('meta[name="base-url"]').attr('content') || '/';
     var existingValues = window.existingExtraFields || {};
     var isEditMode = Object.keys(existingValues).length > 0;
+    var currentExpId = null;
 
     // ========================================
     // Expedition change → load template fields
     // ========================================
     $('#expedition_select').on('change', function() {
-        var expId = $(this).val();
+        currentExpId = $(this).val();
         var $option = $(this).find('option:selected');
 
         $('#template-fields-container').hide().empty();
         $('#no-template-warning').hide();
         $('#submit-section').hide();
 
-        if (!expId) return;
+        if (!currentExpId) return;
 
         // Check if expedition has template
         var hasTemplate = $option.data('has-template');
@@ -29,7 +30,7 @@ $(function() {
         // Load template fields via AJAX
         $('#template-loading').show();
 
-        $.get(BASE + 'orders/getTemplateFields/' + expId, function(resp) {
+        $.get(BASE + 'orders/getTemplateFields/' + currentExpId, function(resp) {
             $('#template-loading').hide();
 
             if (resp.success && resp.columns && resp.columns.length > 0) {
@@ -78,18 +79,52 @@ $(function() {
 
         $('#template-fields-container').html(html);
 
-        // Initialize Select2 on dynamically created selects
-        $('#template-fields-container .select2-dynamic').each(function() {
-            var opts = {
+        // Initialize Select2 on static selects (small option lists)
+        $('#template-fields-container .select2-static').each(function() {
+            $(this).select2({
                 theme: 'bootstrap4',
                 allowClear: true,
                 placeholder: 'Pilih...'
-            };
-            // For large option lists, require typing before showing results
-            if ($(this).find('option').length > 100) {
-                opts.minimumInputLength = 2;
+            });
+        });
+
+        // Initialize Select2 AJAX on dynamic selects (large option lists)
+        $('#template-fields-container .select2-ajax').each(function() {
+            var $sel = $(this);
+            var position = $sel.data('position');
+            var existingVal = $sel.data('existing-val') || '';
+
+            // Pre-set existing value for edit mode
+            if (existingVal) {
+                var opt = new Option(existingVal, existingVal, true, true);
+                $sel.append(opt);
             }
-            $(this).select2(opts);
+
+            $sel.select2({
+                theme: 'bootstrap4',
+                allowClear: true,
+                placeholder: 'Ketik untuk mencari...',
+                minimumInputLength: 1,
+                ajax: {
+                    url: BASE + 'orders/searchOptions/' + currentExpId,
+                    dataType: 'json',
+                    delay: 300,
+                    data: function(params) {
+                        return {
+                            position: position,
+                            search: params.term || '',
+                            page: params.page || 1
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.results,
+                            pagination: data.pagination
+                        };
+                    },
+                    cache: true
+                }
+            });
         });
     }
 
@@ -111,9 +146,22 @@ $(function() {
             html += '<div class="form-group">';
             html += '<label>' + escapeHtml(col.clean_name) + asterisk + '</label>';
 
-            if (col.input_type === 'select' && col.options && col.options.length > 0) {
-                // Select dropdown - always use Select2 for searchability
-                html += '<select name="' + fieldName + '" class="form-control select2-dynamic"' + requiredAttr + '>';
+            // Check if this is a large option list (trimmed by backend)
+            var isLargeSelect = col.input_type === 'select' && col.options_count && col.options_count > 100;
+            var isSmallSelect = col.input_type === 'select' && col.options && col.options.length > 0;
+
+            if (isLargeSelect) {
+                // Large option list → Select2 AJAX (empty select, options loaded on search)
+                html += '<select name="' + fieldName + '" class="form-control select2-ajax"'
+                    + ' data-position="' + col.position + '"'
+                    + ' data-existing-val="' + escapeHtml(existingVal) + '"'
+                    + requiredAttr + '>';
+                html += '<option value="">-- Ketik untuk mencari --</option>';
+                html += '</select>';
+                html += '<small class="text-muted">' + col.options_count + ' pilihan tersedia</small>';
+            } else if (isSmallSelect) {
+                // Small option list → static Select2 with all options pre-rendered
+                html += '<select name="' + fieldName + '" class="form-control select2-static"' + requiredAttr + '>';
                 html += '<option value="">-- Pilih --</option>';
                 for (var j = 0; j < col.options.length; j++) {
                     var opt = col.options[j];
@@ -191,14 +239,17 @@ $(function() {
             var labelText = $label.text().replace('*', '').trim().toLowerCase();
 
             if ($field.is('select')) {
-                // For select: pick first non-empty option, or random option
+                if ($field.hasClass('select2-ajax')) {
+                    // For AJAX selects: skip (can't pick random from unloaded options)
+                    return;
+                }
+                // For static selects: pick first non-empty option
                 var $opts = $field.find('option').filter(function() { return $(this).val() !== ''; });
                 if ($opts.length > 0) {
                     var randomIdx = Math.floor(Math.random() * $opts.length);
                     var val = $opts.eq(randomIdx).val();
                     $field.val(val);
-                    // Update Select2 if initialized
-                    if ($field.hasClass('select2-dynamic')) {
+                    if ($field.hasClass('select2-static')) {
                         $field.trigger('change.select2');
                     }
                 }

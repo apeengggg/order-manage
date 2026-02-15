@@ -190,13 +190,62 @@ class OrderController {
     /**
      * AJAX: Get template fields for an expedition
      * GET /orders/getTemplateFields/{expeditionId}
+     * For columns with >100 options, returns options_count instead of full options array
      */
     public function getTemplateFields($expeditionId) {
         $columns = $this->templateService->getTemplateColumns((int)$expeditionId);
+
+        // Trim large option lists to reduce payload
+        foreach ($columns as &$col) {
+            if ($col['input_type'] === 'select' && !empty($col['options']) && count($col['options']) > 100) {
+                $col['options_count'] = count($col['options']);
+                $col['options'] = [];
+            }
+        }
+        unset($col);
+
         header('Content-Type: application/json');
         echo json_encode([
             'success' => !empty($columns),
             'columns' => $columns,
+        ]);
+        exit;
+    }
+
+    /**
+     * AJAX: Search options for a template column (Select2 AJAX)
+     * GET /orders/searchOptions/{expeditionId}?position=X&search=query&page=1
+     */
+    public function searchOptions($expeditionId) {
+        $expeditionId = (int)$expeditionId;
+        $position = (int)($_GET['position'] ?? 0);
+        $search = trim($_GET['search'] ?? '');
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = 20;
+
+        $options = $this->templateService->getColumnOptions($expeditionId, $position);
+
+        // Filter by search term
+        if ($search !== '') {
+            $options = array_values(array_filter($options, function($opt) use ($search) {
+                return stripos($opt, $search) !== false;
+            }));
+        }
+
+        // Paginate
+        $total = count($options);
+        $offset = ($page - 1) * $limit;
+        $paged = array_slice($options, $offset, $limit);
+
+        $results = [];
+        foreach ($paged as $opt) {
+            $results[] = ['id' => $opt, 'text' => $opt];
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode([
+            'results' => $results,
+            'pagination' => ['more' => ($offset + $limit) < $total],
         ]);
         exit;
     }

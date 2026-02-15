@@ -21,6 +21,7 @@ use App\Controllers\ExpeditionController;
 use App\Controllers\PermissionController;
 use App\Controllers\ModuleController;
 use App\Controllers\RoleController;
+use App\Controllers\UserController;
 use App\Controllers\FileController;
 
 // Parse URL from query string OR REQUEST_URI
@@ -90,6 +91,12 @@ switch ($page) {
         if (!isLoggedIn()) redirect('auth/login');
         checkPermission('roles', 'can_view');
         $ctrl = new RoleController();
+        break;
+
+    case 'users':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('users', 'can_view');
+        $ctrl = new UserController();
         break;
 
     case 'files':

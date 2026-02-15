@@ -307,6 +307,19 @@ class TemplateService {
     }
 
     /**
+     * Get full options array for a specific column by position.
+     */
+    public function getColumnOptions(int $expeditionId, int $position): array {
+        $columns = $this->getTemplateColumns($expeditionId);
+        foreach ($columns as $col) {
+            if ((int)$col['position'] === $position && $col['input_type'] === 'select') {
+                return $col['options'] ?? [];
+            }
+        }
+        return [];
+    }
+
+    /**
      * Delete template for an expedition.
      */
     public function deleteTemplate(int $expeditionId): bool {
