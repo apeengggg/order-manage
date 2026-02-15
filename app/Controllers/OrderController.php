@@ -3,14 +3,17 @@ namespace App\Controllers;
 
 use App\Services\OrderService;
 use App\Services\ExpeditionService;
+use App\Services\TemplateService;
 
 class OrderController {
     private $orderService;
     private $expeditionService;
+    private $templateService;
 
     public function __construct() {
         $this->orderService = new OrderService();
         $this->expeditionService = new ExpeditionService();
+        $this->templateService = new TemplateService();
     }
 
     public function index() {
@@ -33,15 +36,66 @@ class OrderController {
 
         $expeditions = $this->expeditionService->getAll();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = $this->getOrderData();
+        // Load template map for expedition badges
+        $expIds = array_column($expeditions, 'id');
+        $templateMap = $this->templateService->getTemplateMap($expIds);
 
-            if (empty($data['customer_name']) || empty($data['customer_phone']) || empty($data['customer_address']) || empty($data['product_name'])) {
-                flash('error', 'Semua field wajib harus diisi.');
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $expeditionId = (int)($_POST['expedition_id'] ?? 0);
+
+            if ($expeditionId <= 0) {
+                flash('error', 'Ekspedisi harus dipilih.');
                 $pageTitle = 'Input Data Customer';
                 require ROOT_PATH . '/views/orders/create.php';
                 return;
             }
+
+            // Get template columns
+            $templateColumns = $this->templateService->getTemplateColumns($expeditionId);
+
+            if (empty($templateColumns)) {
+                flash('error', 'Ekspedisi ini belum memiliki template. Hubungi admin.');
+                $pageTitle = 'Input Data Customer';
+                require ROOT_PATH . '/views/orders/create.php';
+                return;
+            }
+
+            // Build extra_fields from template columns
+            $extraFields = [];
+            $errors = [];
+            foreach ($templateColumns as $col) {
+                $fieldKey = 'tpl_' . $col['position'];
+                $value = trim($_POST[$fieldKey] ?? '');
+                $extraFields[$col['name']] = $value;
+
+                if ($col['is_required'] && $value === '') {
+                    $errors[] = $col['clean_name'] . ' wajib diisi.';
+                }
+            }
+
+            if (!empty($errors)) {
+                flash('error', $errors[0]);
+                $pageTitle = 'Input Data Customer';
+                require ROOT_PATH . '/views/orders/create.php';
+                return;
+            }
+
+            // Map template fields to common columns
+            $mapped = $this->orderService->mapTemplateToCommon($extraFields);
+
+            $data = [
+                'customer_name' => $mapped['customer_name'] ?? '',
+                'customer_phone' => $mapped['customer_phone'] ?? '',
+                'customer_address' => $mapped['customer_address'] ?? '',
+                'product_name' => $mapped['product_name'] ?? '',
+                'qty' => (int)($mapped['qty'] ?? 1),
+                'price' => (float)($mapped['price'] ?? 0),
+                'expedition_id' => $expeditionId,
+                'resi' => trim($_POST['resi'] ?? ''),
+                'notes' => trim($_POST['notes'] ?? ''),
+                'extra_fields' => json_encode($extraFields, JSON_UNESCAPED_UNICODE),
+                'created_by' => auth('user_id'),
+            ];
 
             $this->orderService->create($data);
             flash('success', 'Order berhasil ditambahkan.');
@@ -67,9 +121,35 @@ class OrderController {
         }
 
         $expeditions = $this->expeditionService->getAll();
+        $expIds = array_column($expeditions, 'id');
+        $templateMap = $this->templateService->getTemplateMap($expIds);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = $this->getOrderData(false);
+            $expeditionId = (int)($_POST['expedition_id'] ?? 0);
+            $templateColumns = $this->templateService->getTemplateColumns($expeditionId);
+
+            // Build extra_fields
+            $extraFields = [];
+            foreach ($templateColumns as $col) {
+                $fieldKey = 'tpl_' . $col['position'];
+                $extraFields[$col['name']] = trim($_POST[$fieldKey] ?? '');
+            }
+
+            $mapped = $this->orderService->mapTemplateToCommon($extraFields);
+
+            $data = [
+                'customer_name' => $mapped['customer_name'] ?? '',
+                'customer_phone' => $mapped['customer_phone'] ?? '',
+                'customer_address' => $mapped['customer_address'] ?? '',
+                'product_name' => $mapped['product_name'] ?? '',
+                'qty' => (int)($mapped['qty'] ?? 1),
+                'price' => (float)($mapped['price'] ?? 0),
+                'expedition_id' => $expeditionId,
+                'resi' => trim($_POST['resi'] ?? ''),
+                'notes' => trim($_POST['notes'] ?? ''),
+                'extra_fields' => json_encode($extraFields, JSON_UNESCAPED_UNICODE),
+            ];
+
             $result = $this->orderService->update($id, $data);
 
             if ($result === null) {
@@ -107,21 +187,17 @@ class OrderController {
         exit;
     }
 
-    private function getOrderData(bool $includeCreatedBy = true): array {
-        $data = [
-            'customer_name' => trim($_POST['customer_name'] ?? ''),
-            'customer_phone' => trim($_POST['customer_phone'] ?? ''),
-            'customer_address' => trim($_POST['customer_address'] ?? ''),
-            'product_name' => trim($_POST['product_name'] ?? ''),
-            'qty' => (int)($_POST['qty'] ?? 1),
-            'price' => (float)($_POST['price'] ?? 0),
-            'expedition_id' => $_POST['expedition_id'] ?: null,
-            'resi' => trim($_POST['resi'] ?? ''),
-            'notes' => trim($_POST['notes'] ?? ''),
-        ];
-        if ($includeCreatedBy) {
-            $data['created_by'] = auth('user_id');
-        }
-        return $data;
+    /**
+     * AJAX: Get template fields for an expedition
+     * GET /orders/getTemplateFields/{expeditionId}
+     */
+    public function getTemplateFields($expeditionId) {
+        $columns = $this->templateService->getTemplateColumns((int)$expeditionId);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => !empty($columns),
+            'columns' => $columns,
+        ]);
+        exit;
     }
 }

@@ -27,8 +27,10 @@ class AuthService {
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['name'] = $user['name'];
-        $_SESSION['role'] = $user['role'];
-        loadPermissions($user['role']);
+        $_SESSION['role_id'] = (int)$user['role_id'];
+        $_SESSION['role_name'] = $user['role_name'] ?? 'User';
+        $_SESSION['role_slug'] = $user['role_slug'] ?? '';
+        loadPermissions((int)$user['role_id']);
     }
 
     public function logout(): void {

@@ -47,6 +47,14 @@
                                     </div>
                                     <small class="text-muted">Opsional. Maks 5MB. Format: jpg, png, gif, webp</small>
                                 </div>
+                                <div class="form-group">
+                                    <label>Template XLSX</label>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="createTemplateInput" name="template" accept=".xlsx,.xls">
+                                        <label class="custom-file-label" for="createTemplateInput">Pilih template...</label>
+                                    </div>
+                                    <small class="text-muted">Opsional. File template upload ekspedisi (.xlsx)</small>
+                                </div>
                             </div>
                             <div class="card-footer">
                                 <button type="submit" class="btn btn-primary btn-block">
@@ -71,12 +79,22 @@
                                         <th width="60">Foto</th>
                                         <th>Nama</th>
                                         <th>Kode</th>
-                                        <th width="200">Aksi</th>
+                                        <th>Template</th>
+                                        <th width="230">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php foreach ($expeditions as $i => $exp): ?>
-                                    <?php $photo = $photosMap[$exp['id']] ?? null; ?>
+                                    <?php
+                                        $photo = $photosMap[$exp['id']] ?? null;
+                                        $hasTemplate = isset($templateMap[$exp['id']]);
+                                        $tplData = $templateMap[$exp['id']] ?? null;
+                                        $tplColCount = 0;
+                                        if ($tplData) {
+                                            $tplCols = json_decode($tplData['columns'], true);
+                                            $tplColCount = is_array($tplCols) ? count($tplCols) : 0;
+                                        }
+                                    ?>
                                     <tr>
                                         <td><?= $i + 1 ?></td>
                                         <td>
@@ -93,13 +111,22 @@
                                                 </div>
                                             <?php endif; ?>
                                         </td>
+                                        <td><?= e($exp['name']) ?></td>
+                                        <td><code><?= e($exp['code']) ?></code></td>
                                         <td>
-                                            <span class="exp-name-<?= $exp['id'] ?>"><?= e($exp['name']) ?></span>
+                                            <?php if ($hasTemplate): ?>
+                                                <span class="badge badge-success"><i class="fas fa-check mr-1"></i><?= $tplColCount ?> kolom</span>
+                                            <?php else: ?>
+                                                <span class="badge badge-danger"><i class="fas fa-times mr-1"></i>Belum</span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
-                                            <code class="exp-code-<?= $exp['id'] ?>"><?= e($exp['code']) ?></code>
-                                        </td>
-                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-template-exp"
+                                                data-id="<?= $exp['id'] ?>"
+                                                data-name="<?= e($exp['name']) ?>"
+                                                title="Upload Template">
+                                                <i class="fas fa-file-excel"></i>
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-info btn-files-exp"
                                                 data-id="<?= $exp['id'] ?>"
                                                 data-name="<?= e($exp['name']) ?>"
@@ -123,7 +150,7 @@
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($expeditions)): ?>
-                                    <tr><td colspan="5" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
+                                    <tr><td colspan="6" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -174,6 +201,67 @@
                 </div>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Modal Template Upload -->
+<div class="modal fade" id="templateExpModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-file-excel mr-1"></i> Template - <span id="templateExpName"></span></h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Upload Template XLSX</label>
+                    <div class="input-group">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="templateFileInput" accept=".xlsx,.xls">
+                            <label class="custom-file-label" for="templateFileInput">Pilih file template...</label>
+                        </div>
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-primary" id="btnUploadTemplate" disabled>
+                                <i class="fas fa-upload mr-1"></i> Upload
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">File XLSX/XLS template upload ekspedisi. Kolom header bertanda * = wajib diisi.</small>
+                </div>
+
+                <div id="templateUploadProgress" style="display:none;">
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%">Memproses...</div>
+                    </div>
+                </div>
+
+                <div id="templatePreview" style="display:none;">
+                    <h6><i class="fas fa-columns mr-1"></i> Kolom Template <small class="text-muted" id="templateSheetName"></small></h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th width="30">#</th>
+                                    <th width="320">Nama Kolom</th>
+                                    <th width="50">Wajib</th>
+                                    <th width="90">Tipe Input</th>
+                                    <th>Opsi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="templateColumnsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2">
+                        <a href="#" id="btnDownloadTemplate" class="btn btn-sm btn-outline-success" target="_blank">
+                            <i class="fas fa-download mr-1"></i> Download Template Asli
+                        </a>
+                        <button type="button" class="btn btn-sm btn-primary ml-2" id="btnSaveTemplateColumns">
+                            <i class="fas fa-save mr-1"></i> Simpan Perubahan Kolom
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

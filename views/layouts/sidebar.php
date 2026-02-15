@@ -12,7 +12,7 @@
             </div>
             <div class="info">
                 <a href="#" class="d-block"><?= e(auth('name')) ?></a>
-                <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= strtoupper(auth('role')) ?></span>
+                <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= e(auth('role_name')) ?></span>
             </div>
         </div>
 

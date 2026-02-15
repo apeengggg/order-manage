@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(php -r:*)",
+      "Bash(python -c:*)",
+      "Bash(pip install:*)",
+      "Bash(composer require:*)",
+      "Bash(composer show:*)",
+      "Bash(php -v:*)",
+      "Bash(php:*)",
+      "Bash(find:*)"
+    ]
+  }
+}

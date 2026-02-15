@@ -37,10 +37,10 @@ $permTypes = [
                     <ul class="nav nav-tabs" id="roleTabs" role="tablist">
                         <?php foreach ($roles as $i => $role): ?>
                         <li class="nav-item">
-                            <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" id="tab-<?= $role ?>"
-                               data-toggle="tab" href="#content-<?= $role ?>" role="tab">
+                            <a class="nav-link <?= $i === 0 ? 'active' : '' ?>" id="tab-<?= $role['id'] ?>"
+                               data-toggle="tab" href="#content-<?= $role['id'] ?>" role="tab">
                                 <i class="fas fa-user-shield mr-1"></i>
-                                <?= strtoupper($role) ?>
+                                <?= e($role['name']) ?>
                             </a>
                         </li>
                         <?php endforeach; ?>
@@ -50,10 +50,10 @@ $permTypes = [
                     <div class="tab-content" id="roleTabContent">
                         <?php foreach ($roles as $i => $role): ?>
                         <div class="tab-pane fade <?= $i === 0 ? 'show active' : '' ?>"
-                             id="content-<?= $role ?>" role="tabpanel">
+                             id="content-<?= $role['id'] ?>" role="tabpanel">
 
                             <form method="POST" action="<?= BASE_URL ?>permissions/update" class="permission-form">
-                                <input type="hidden" name="role" value="<?= e($role) ?>">
+                                <input type="hidden" name="role_id" value="<?= $role['id'] ?>">
 
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-striped table-hover mb-0">
@@ -76,7 +76,7 @@ $permTypes = [
                                         <tbody>
                                             <?php foreach ($modules as $module): ?>
                                             <?php
-                                                $rolePerms = $allPermissions[$role] ?? [];
+                                                $rolePerms = $allPermissions[$role['id']] ?? [];
                                                 $mp = null;
                                                 foreach ($rolePerms as $rp) {
                                                     if ((int)$rp['module_id'] === (int)$module['id']) {
@@ -96,13 +96,13 @@ $permTypes = [
                                                     <div class="custom-control custom-switch">
                                                         <input type="checkbox"
                                                                class="custom-control-input perm-checkbox"
-                                                               id="<?= $role ?>_<?= $module['id'] ?>_<?= $key ?>"
+                                                               id="r<?= $role['id'] ?>_<?= $module['id'] ?>_<?= $key ?>"
                                                                name="permissions[<?= $module['id'] ?>][<?= $key ?>]"
                                                                value="1"
-                                                               data-row="<?= $role ?>_<?= $module['id'] ?>"
+                                                               data-row="r<?= $role['id'] ?>_<?= $module['id'] ?>"
                                                                <?= ($mp && (int)$mp[$key]) ? 'checked' : '' ?>>
                                                         <label class="custom-control-label"
-                                                               for="<?= $role ?>_<?= $module['id'] ?>_<?= $key ?>"></label>
+                                                               for="r<?= $role['id'] ?>_<?= $module['id'] ?>_<?= $key ?>"></label>
                                                     </div>
                                                 </td>
                                                 <?php endforeach; ?>
@@ -110,10 +110,10 @@ $permTypes = [
                                                     <div class="custom-control custom-checkbox">
                                                         <input type="checkbox"
                                                                class="custom-control-input toggle-all-row"
-                                                               id="<?= $role ?>_<?= $module['id'] ?>_all"
-                                                               data-row="<?= $role ?>_<?= $module['id'] ?>">
+                                                               id="r<?= $role['id'] ?>_<?= $module['id'] ?>_all"
+                                                               data-row="r<?= $role['id'] ?>_<?= $module['id'] ?>">
                                                         <label class="custom-control-label"
-                                                               for="<?= $role ?>_<?= $module['id'] ?>_all"></label>
+                                                               for="r<?= $role['id'] ?>_<?= $module['id'] ?>_all"></label>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -124,7 +124,7 @@ $permTypes = [
 
                                 <div class="mt-3">
                                     <button type="submit" class="btn btn-primary btn-save-perm">
-                                        <i class="fas fa-save mr-1"></i> Simpan Permission <?= strtoupper($role) ?>
+                                        <i class="fas fa-save mr-1"></i> Simpan Permission <?= e($role['name']) ?>
                                     </button>
                                 </div>
                             </form>

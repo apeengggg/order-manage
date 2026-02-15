@@ -81,27 +81,65 @@
                                     <th>#</th>
                                     <th>Customer</th>
                                     <th>Telepon</th>
-                                    <th>Alamat</th>
-                                    <th>Produk</th>
-                                    <th>Qty</th>
-                                    <th>Total</th>
                                     <th>Ekspedisi</th>
-                                    <th>Resi</th>
+                                    <th>Detail</th>
+                                    <th>Dibuat</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($orders as $i => $o): ?>
+                                <?php foreach ($orders as $i => $o):
+                                    $extra = json_decode($o['extra_fields'] ?? '{}', true) ?: [];
+                                    $displayName = $o['customer_name'];
+                                    $displayPhone = $o['customer_phone'];
+                                    if (empty($displayName) && !empty($extra)) {
+                                        foreach ($extra as $key => $val) {
+                                            $lk = strtolower($key);
+                                            if (str_contains($lk, 'nama') && str_contains($lk, 'penerima') && !empty($val)) {
+                                                $displayName = $val; break;
+                                            }
+                                        }
+                                        if (empty($displayName)) {
+                                            foreach ($extra as $val) {
+                                                if (!empty(trim((string)$val))) { $displayName = $val; break; }
+                                            }
+                                        }
+                                    }
+                                    if (empty($displayPhone) && !empty($extra)) {
+                                        foreach ($extra as $key => $val) {
+                                            $lk = strtolower($key);
+                                            if ((str_contains($lk, 'telepon') || str_contains($lk, 'phone') || str_contains($lk, 'handphone') || str_contains($lk, 'kontak')) && !empty($val)) {
+                                                $displayPhone = $val; break;
+                                            }
+                                        }
+                                    }
+                                    // Summary of key fields
+                                    $summaryParts = [];
+                                    $shown = 0;
+                                    foreach ($extra as $key => $val) {
+                                        if (empty(trim((string)$val))) continue;
+                                        $cleanKey = trim(ltrim($key, '* '));
+                                        if (strpos($cleanKey, '//') !== false) $cleanKey = trim(explode('//', $cleanKey)[0]);
+                                        $lk = strtolower($cleanKey);
+                                        if (str_contains($lk, 'nama') && str_contains($lk, 'penerima')) continue;
+                                        if (str_contains($lk, 'telepon') || str_contains($lk, 'phone') || str_contains($lk, 'handphone')) continue;
+                                        $summaryParts[] = '<small>' . e(mb_strimwidth((string)$val, 0, 25, '...')) . '</small>';
+                                        $shown++;
+                                        if ($shown >= 2) break;
+                                    }
+                                ?>
                                 <tr>
                                     <td><input type="checkbox" name="order_ids[]" value="<?= $o['id'] ?>" class="order-check"></td>
                                     <td><?= $i + 1 ?></td>
-                                    <td><strong><?= e($o['customer_name']) ?></strong></td>
-                                    <td><?= e($o['customer_phone']) ?></td>
-                                    <td><small><?= e($o['customer_address']) ?></small></td>
-                                    <td><?= e($o['product_name']) ?></td>
-                                    <td><?= $o['qty'] ?></td>
-                                    <td><?= formatRupiah($o['total']) ?></td>
-                                    <td><?= e($o['expedition_name'] ?? '-') ?></td>
-                                    <td><code><?= e($o['resi'] ?: '-') ?></code></td>
+                                    <td><strong><?= e($displayName ?: '-') ?></strong></td>
+                                    <td><?= e($displayPhone ?: '-') ?></td>
+                                    <td>
+                                        <?= e($o['expedition_name'] ?? '-') ?>
+                                        <?php if ($o['resi']): ?>
+                                            <br><code class="small"><?= e($o['resi']) ?></code>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= !empty($summaryParts) ? implode(', ', $summaryParts) : '<span class="text-muted">-</span>' ?></td>
+                                    <td><small><?= date('d/m/Y', strtotime($o['created_at'])) ?></small></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -112,6 +150,26 @@
             </div>
         </div>
     </section>
+</div>
+
+<!-- Export Progress Overlay -->
+<div id="exportOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; justify-content:center; align-items:center;">
+    <div class="card shadow-lg" style="width:450px; max-width:90%; border-radius:12px; overflow:hidden;">
+        <div class="card-body text-center py-4 px-4">
+            <div id="exportSpinner" class="mb-3">
+                <i class="fas fa-file-export fa-3x text-success mb-2"></i>
+                <h5 class="mb-1" id="exportTitle">Memproses Export...</h5>
+                <p class="text-muted small mb-3" id="exportSubtitle">Menyiapkan file, mohon tunggu</p>
+            </div>
+            <div class="progress mb-2" style="height:22px; border-radius:11px;">
+                <div id="exportProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                     role="progressbar" style="width:0%; transition: width 0.3s ease;">
+                    <span id="exportProgressText" class="font-weight-bold">0%</span>
+                </div>
+            </div>
+            <p class="text-muted small mb-0" id="exportInfo">Memproses data...</p>
+        </div>
+    </div>
 </div>
 
 <?php $pageScripts = ['admin-export.js']; ?>

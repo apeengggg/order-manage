@@ -50,26 +50,28 @@ class OrderRepository {
 
     public function create(array $data): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO orders (customer_name, customer_phone, customer_address, product_name, qty, price, total, expedition_id, resi, notes, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO orders (customer_name, customer_phone, customer_address, product_name, qty, price, total, expedition_id, resi, notes, extra_fields, created_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
         $stmt->execute([
             $data['customer_name'], $data['customer_phone'], $data['customer_address'],
             $data['product_name'], $data['qty'], $data['price'], $data['total'],
-            $data['expedition_id'], $data['resi'], $data['notes'], $data['created_by']
+            $data['expedition_id'], $data['resi'], $data['notes'],
+            $data['extra_fields'] ?? null, $data['created_by']
         ]);
         return (int)$this->db->lastInsertId();
     }
 
     public function update(int $id, array $data): bool {
         $stmt = $this->db->prepare(
-            "UPDATE orders SET customer_name=?, customer_phone=?, customer_address=?, product_name=?, qty=?, price=?, total=?, expedition_id=?, resi=?, notes=?
+            "UPDATE orders SET customer_name=?, customer_phone=?, customer_address=?, product_name=?, qty=?, price=?, total=?, expedition_id=?, resi=?, notes=?, extra_fields=?
              WHERE id=? AND is_exported=0"
         );
         $stmt->execute([
             $data['customer_name'], $data['customer_phone'], $data['customer_address'],
             $data['product_name'], $data['qty'], $data['price'], $data['total'],
-            $data['expedition_id'], $data['resi'], $data['notes'], $id
+            $data['expedition_id'], $data['resi'], $data['notes'],
+            $data['extra_fields'] ?? null, $id
         ]);
         return $stmt->rowCount() > 0;
     }

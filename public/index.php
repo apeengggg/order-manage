@@ -4,6 +4,9 @@
  * Document root entry point - all requests go through here.
  */
 
+ini_set('display_errors', 0);
+error_reporting(0);
+
 // Base path = parent of public/
 define('ROOT_PATH', dirname(__DIR__));
 
@@ -17,6 +20,7 @@ use App\Controllers\AdminController;
 use App\Controllers\ExpeditionController;
 use App\Controllers\PermissionController;
 use App\Controllers\ModuleController;
+use App\Controllers\RoleController;
 use App\Controllers\FileController;
 
 // Parse URL from query string OR REQUEST_URI
@@ -78,8 +82,14 @@ switch ($page) {
 
     case 'modules':
         if (!isLoggedIn()) redirect('auth/login');
-        checkPermission('permissions', 'can_view');
+        checkPermission('modules', 'can_view');
         $ctrl = new ModuleController();
+        break;
+
+    case 'roles':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('roles', 'can_view');
+        $ctrl = new RoleController();
         break;
 
     case 'files':

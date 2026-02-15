@@ -42,11 +42,11 @@ function isLoggedIn() {
 }
 
 function isAdmin() {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+    return (auth('role_slug') === 'admin');
 }
 
 function isCS() {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'cs';
+    return (auth('role_slug') === 'cs');
 }
 
 function auth($key = null) {
@@ -79,9 +79,9 @@ function formatRupiah($num) {
 /**
  * Load permissions into session after login
  */
-function loadPermissions($role) {
+function loadPermissions(int $roleId) {
     $permRepo = new \App\Repositories\PermissionRepository();
-    $_SESSION['permissions'] = $permRepo->loadPermissionsForRole($role);
+    $_SESSION['permissions'] = $permRepo->loadPermissionsForRole($roleId);
     $_SESSION['menus'] = array_filter($_SESSION['permissions'], fn($p) => $p['can_view'] === 1);
 }
 

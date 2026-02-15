@@ -20,27 +20,27 @@ class PermissionRepository {
              FROM role_permissions rp
              INNER JOIN modules m ON m.id = rp.module_id
              WHERE m.is_active = 1
-             ORDER BY rp.role, m.sort_order"
+             ORDER BY rp.role_id, m.sort_order"
         );
         $rows = $stmt->fetchAll();
         $grouped = [];
         foreach ($rows as $row) {
-            $grouped[$row['role']][] = $row;
+            $grouped[$row['role_id']][] = $row;
         }
         return $grouped;
     }
 
-    public function loadPermissionsForRole(string $role): array {
+    public function loadPermissionsForRole(int $roleId): array {
         $stmt = $this->db->prepare(
             "SELECT m.slug, m.name, m.icon, m.url, m.parent_id, m.sort_order,
                     rp.can_view, rp.can_add, rp.can_edit, rp.can_delete,
                     rp.can_view_detail, rp.can_upload, rp.can_download
              FROM role_permissions rp
              INNER JOIN modules m ON m.id = rp.module_id
-             WHERE rp.role = ? AND m.is_active = 1
+             WHERE rp.role_id = ? AND m.is_active = 1
              ORDER BY m.sort_order"
         );
-        $stmt->execute([$role]);
+        $stmt->execute([$roleId]);
         $rows = $stmt->fetchAll();
 
         $permissions = [];
@@ -63,9 +63,9 @@ class PermissionRepository {
         return $permissions;
     }
 
-    public function upsertPermission(string $role, int $moduleId, array $perms): bool {
+    public function upsertPermission(int $roleId, int $moduleId, array $perms): bool {
         $stmt = $this->db->prepare(
-            "INSERT INTO role_permissions (role, module_id, can_view, can_add, can_edit, can_delete, can_view_detail, can_upload, can_download)
+            "INSERT INTO role_permissions (role_id, module_id, can_view, can_add, can_edit, can_delete, can_view_detail, can_upload, can_download)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 can_view=VALUES(can_view), can_add=VALUES(can_add), can_edit=VALUES(can_edit),
@@ -73,7 +73,7 @@ class PermissionRepository {
                 can_upload=VALUES(can_upload), can_download=VALUES(can_download)"
         );
         return $stmt->execute([
-            $role, $moduleId,
+            $roleId, $moduleId,
             $perms['can_view'] ?? 0, $perms['can_add'] ?? 0, $perms['can_edit'] ?? 0,
             $perms['can_delete'] ?? 0, $perms['can_view_detail'] ?? 0,
             $perms['can_upload'] ?? 0, $perms['can_download'] ?? 0
@@ -81,7 +81,7 @@ class PermissionRepository {
     }
 
     public function getRoles(): array {
-        return $this->db->query("SELECT DISTINCT role FROM users ORDER BY role")->fetchAll(PDO::FETCH_COLUMN);
+        return $this->db->query("SELECT * FROM roles ORDER BY id")->fetchAll();
     }
 
     public function createModule(array $data): int {

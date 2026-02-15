@@ -39,6 +39,23 @@ $(function() {
         $('#iconPickerModal').modal('show');
     });
 
+    // Delete module confirmation
+    $('.btn-delete').on('click', function() {
+        var $form = $(this).closest('form');
+        var name = $(this).closest('tr').find('strong').text();
+        Swal.fire({
+            title: 'Hapus Modul?',
+            text: 'Modul "' + name + '" akan dihapus (nonaktif).',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then(function(result) {
+            if (result.isConfirmed) $form.submit();
+        });
+    });
+
     // Edit module modal
     $('.btn-edit-module').on('click', function() {
         var $btn = $(this);

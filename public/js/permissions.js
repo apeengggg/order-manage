@@ -28,10 +28,9 @@ $(function() {
     $('.permission-form').on('submit', function(e) {
         e.preventDefault();
         var form = this;
-        var role = $(form).find('input[name="role"]').val().toUpperCase();
         App.confirmAction({
             title: 'Simpan Permission?',
-            text: 'Permission untuk role ' + role + ' akan diupdate.',
+            text: 'Permission akan diupdate.',
             confirmText: 'Ya, Simpan!',
             confirmColor: '#007bff',
             onConfirm: function() { form.submit(); }

@@ -25,22 +25,23 @@ class PermissionController {
         checkPermission('permissions', 'can_edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('permissions');
 
-        $role = $_POST['role'] ?? '';
+        $roleId = (int)($_POST['role_id'] ?? 0);
         $permissions = $_POST['permissions'] ?? [];
 
-        if (empty($role)) {
+        if (empty($roleId)) {
             flash('error', 'Role tidak valid.');
             redirect('permissions');
         }
 
         $modules = $this->permService->getAllModules();
-        $this->permService->updateRolePermissions($role, $modules, $permissions);
+        $this->permService->updateRolePermissions($roleId, $modules, $permissions);
 
-        if ($role === auth('role')) {
-            loadPermissions($role);
+        // Reload permissions if editing current user's role
+        if ($roleId === (int)auth('role_id')) {
+            loadPermissions($roleId);
         }
 
-        flash('success', 'Permission untuk role "' . strtoupper($role) . '" berhasil diupdate.');
+        flash('success', 'Permission berhasil diupdate.');
         redirect('permissions');
     }
 }

@@ -11,48 +11,76 @@ class ModuleController {
     }
 
     public function index() {
-        checkPermission('permissions', 'can_view');
+        checkPermission('modules', 'can_view');
         $modules = $this->permService->getAllModules();
         $pageTitle = 'Kelola Menu / Modul';
         require ROOT_PATH . '/views/modules/index.php';
     }
 
     public function create() {
-        checkPermission('permissions', 'can_add');
+        checkPermission('modules', 'can_add');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('modules');
 
-        $data = $this->getModuleData();
+        $v = validate($_POST, [
+            'name' => 'required|string|min:2|max:100',
+            'slug' => 'required|string|min:2|max:50|alpha_dash',
+            'url' => 'required|string|max:200',
+            'icon' => 'string|max:50',
+            'sort_order' => 'integer|min:0',
+        ], [], [
+            'name' => 'nama modul',
+            'slug' => 'slug',
+            'url' => 'URL',
+        ]);
 
-        if (empty($data['name']) || empty($data['slug']) || empty($data['url'])) {
-            flash('error', 'Nama, slug, dan URL harus diisi.');
+        if ($v->fails()) {
+            flash('error', $v->firstError());
             redirect('modules');
         }
 
+        $data = $this->getModuleData();
         $this->permService->createModule($data);
-        loadPermissions(auth('role'));
+        loadPermissions((int)auth('role_id'));
 
         flash('success', 'Modul berhasil ditambahkan.');
         redirect('modules');
     }
 
     public function update($id) {
-        checkPermission('permissions', 'can_edit');
+        checkPermission('modules', 'can_edit');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('modules');
+
+        $v = validate($_POST, [
+            'name' => 'required|string|min:2|max:100',
+            'slug' => 'required|string|min:2|max:50|alpha_dash',
+            'url' => 'required|string|max:200',
+            'icon' => 'string|max:50',
+            'sort_order' => 'integer|min:0',
+        ], [], [
+            'name' => 'nama modul',
+            'slug' => 'slug',
+            'url' => 'URL',
+        ]);
+
+        if ($v->fails()) {
+            flash('error', $v->firstError());
+            redirect('modules');
+        }
 
         $data = $this->getModuleData();
         $this->permService->updateModule($id, $data);
-        loadPermissions(auth('role'));
+        loadPermissions((int)auth('role_id'));
 
         flash('success', 'Modul berhasil diupdate.');
         redirect('modules');
     }
 
     public function delete($id) {
-        checkPermission('permissions', 'can_delete');
+        checkPermission('modules', 'can_delete');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') redirect('modules');
 
         $this->permService->deleteModule($id);
-        loadPermissions(auth('role'));
+        loadPermissions((int)auth('role_id'));
 
         flash('success', 'Modul berhasil dihapus.');
         redirect('modules');

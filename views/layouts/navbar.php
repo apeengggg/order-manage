@@ -11,7 +11,7 @@
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
                 <i class="fas fa-user-circle mr-1"></i> <?= e(auth('name')) ?>
-                <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?> ml-1"><?= strtoupper(auth('role')) ?></span>
+                <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?> ml-1"><?= e(auth('role_name')) ?></span>
             </a>
             <div class="dropdown-menu dropdown-menu-right">
                 <span class="dropdown-item-text text-muted">Login sebagai: <?= e(auth('username')) ?></span>

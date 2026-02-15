@@ -95,7 +95,7 @@
                             <h3 class="card-title"><i class="fas fa-info-circle mr-1"></i> Informasi</h3>
                         </div>
                         <div class="card-body">
-                            <p class="mb-1"><strong>Role:</strong> <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= strtoupper(auth('role')) ?></span></p>
+                            <p class="mb-1"><strong>Role:</strong> <span class="badge badge-<?= isAdmin() ? 'danger' : 'info' ?>"><?= e(auth('role_name')) ?></span></p>
                             <p class="mb-1"><strong>Login sebagai:</strong> <?= e(auth('name')) ?></p>
                             <hr>
                             <small class="text-muted">

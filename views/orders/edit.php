@@ -20,90 +20,62 @@
 
     <section class="content">
         <div class="container-fluid">
-            <form method="POST" action="<?= BASE_URL ?>orders/edit/<?= $order['id'] ?>">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card card-primary">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-user mr-1"></i> Data Customer</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label>Nama Customer <span class="text-danger">*</span></label>
-                                    <input type="text" name="customer_name" class="form-control" value="<?= e($order['customer_name']) ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>No. Telepon <span class="text-danger">*</span></label>
-                                    <input type="text" name="customer_phone" class="form-control" value="<?= e($order['customer_phone']) ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Alamat Lengkap <span class="text-danger">*</span></label>
-                                    <textarea name="customer_address" class="form-control" rows="3" required><?= e($order['customer_address']) ?></textarea>
-                                </div>
-                            </div>
-                        </div>
+            <form method="POST" action="<?= BASE_URL ?>orders/edit/<?= $order['id'] ?>" id="orderForm">
+                <!-- Pilih Ekspedisi -->
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-truck mr-1"></i> Pilih Ekspedisi</h3>
                     </div>
-
-                    <div class="col-md-6">
-                        <div class="card card-info">
-                            <div class="card-header">
-                                <h3 class="card-title"><i class="fas fa-box mr-1"></i> Data Order</h3>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-group">
-                                    <label>Nama Produk <span class="text-danger">*</span></label>
-                                    <input type="text" name="product_name" class="form-control" value="<?= e($order['product_name']) ?>" required>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Qty <span class="text-danger">*</span></label>
-                                            <input type="number" name="qty" id="qty" class="form-control" value="<?= e($order['qty']) ?>" min="1" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Harga Satuan <span class="text-danger">*</span></label>
-                                            <input type="number" name="price" id="price" class="form-control" value="<?= e($order['price']) ?>" min="0" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Total</label>
-                                    <h4 class="text-primary" id="total_display">Rp 0</h4>
-                                </div>
-                                <div class="form-group">
-                                    <label>Ekspedisi</label>
-                                    <select name="expedition_id" class="form-control select2">
-                                        <option value="">-- Pilih Ekspedisi --</option>
-                                        <?php foreach ($expeditions as $exp): ?>
-                                        <option value="<?= $exp['id'] ?>" <?= $order['expedition_id'] == $exp['id'] ? 'selected' : '' ?>>
-                                            <?= e($exp['name']) ?> (<?= e($exp['code']) ?>)
-                                        </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>No. Resi</label>
-                                    <input type="text" name="resi" class="form-control" value="<?= e($order['resi']) ?>">
-                                </div>
-                                <div class="form-group">
-                                    <label>Catatan</label>
-                                    <textarea name="notes" class="form-control" rows="2"><?= e($order['notes']) ?></textarea>
-                                </div>
-                            </div>
+                    <div class="card-body">
+                        <div class="form-group mb-0">
+                            <label>Ekspedisi <span class="text-danger">*</span></label>
+                            <select name="expedition_id" id="expedition_select" class="form-control select2" required>
+                                <option value="">-- Pilih Ekspedisi --</option>
+                                <?php foreach ($expeditions as $exp):
+                                    $hasTpl = isset($templateMap[$exp['id']]);
+                                ?>
+                                <option value="<?= $exp['id'] ?>"
+                                    data-has-template="<?= $hasTpl ? '1' : '0' ?>"
+                                    <?= $order['expedition_id'] == $exp['id'] ? 'selected' : '' ?>>
+                                    <?= e($exp['name']) ?> (<?= e($exp['code']) ?>)
+                                    <?= !$hasTpl ? '- Belum ada template' : '' ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-12">
-                        <a href="<?= BASE_URL ?>orders" class="btn btn-secondary mr-2">
-                            <i class="fas fa-arrow-left mr-1"></i> Kembali
-                        </a>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="fas fa-save mr-1"></i> Update Order
-                        </button>
+                <!-- Warning: no template -->
+                <div id="no-template-warning" style="display:none;">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        Ekspedisi ini belum memiliki template. Hubungi admin untuk upload template di halaman Kelola Ekspedisi.
+                    </div>
+                </div>
+
+                <!-- Loading -->
+                <div id="template-loading" style="display:none;">
+                    <div class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                        <p class="mt-2 text-muted">Memuat template...</p>
+                    </div>
+                </div>
+
+                <!-- Dynamic template fields container -->
+                <div id="template-fields-container" style="display:none;"></div>
+
+                <!-- Submit -->
+                <div id="submit-section" style="display:none;">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <a href="<?= BASE_URL ?>orders" class="btn btn-secondary mr-2">
+                                <i class="fas fa-arrow-left mr-1"></i> Kembali
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save mr-1"></i> Update Order
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -111,4 +83,8 @@
     </section>
 </div>
 
+<script>
+var existingExtraFields = <?= json_encode($order['extra_fields_decoded'] ?? new stdClass(), JSON_UNESCAPED_UNICODE) ?>;
+</script>
+<?php $pageScripts = ['order-form.js']; ?>
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

@@ -22,11 +22,11 @@ class PermissionService {
         return $this->permRepo->getRoles();
     }
 
-    public function loadForRole(string $role): array {
-        return $this->permRepo->loadPermissionsForRole($role);
+    public function loadForRole(int $roleId): array {
+        return $this->permRepo->loadPermissionsForRole($roleId);
     }
 
-    public function updateRolePermissions(string $role, array $modules, array $formPermissions): void {
+    public function updateRolePermissions(int $roleId, array $modules, array $formPermissions): void {
         foreach ($modules as $module) {
             $mid = $module['id'];
             $perms = [
@@ -38,7 +38,7 @@ class PermissionService {
                 'can_upload'      => isset($formPermissions[$mid]['can_upload']) ? 1 : 0,
                 'can_download'    => isset($formPermissions[$mid]['can_download']) ? 1 : 0,
             ];
-            $this->permRepo->upsertPermission($role, $mid, $perms);
+            $this->permRepo->upsertPermission($roleId, $mid, $perms);
         }
     }
 
@@ -50,9 +50,9 @@ class PermissionService {
         foreach ($roles as $role) {
             $perms = array_fill_keys(
                 ['can_view','can_add','can_edit','can_delete','can_view_detail','can_upload','can_download'],
-                $role === 'admin' ? 1 : 0
+                0
             );
-            $this->permRepo->upsertPermission($role, $moduleId, $perms);
+            $this->permRepo->upsertPermission($role['id'], $moduleId, $perms);
         }
 
         return $moduleId;

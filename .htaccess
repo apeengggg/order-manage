@@ -3,3 +3,8 @@ RewriteEngine On
 # Redirect all requests to public/
 RewriteRule ^$ public/ [L]
 RewriteRule ^(.+)$ public/$1 [L]
+
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>

@@ -6,6 +6,21 @@ use App\Repositories\OrderRepository;
 class OrderService {
     private $orderRepo;
 
+    /**
+     * Map template column clean_name (lowercase) to orders table column.
+     */
+    private const FIELD_MAP = [
+        'customer_name' => ['nama penerima', 'penerima', 'nama_penerima'],
+        'customer_phone' => [
+            'nomor telepon penerima', 'no handphone penerima', 'no.hp penerima',
+            'telpon1_penerima', 'kontak penerima', 'no handphone', 'kontak'
+        ],
+        'customer_address' => ['alamat lengkap', 'alamat penerima', 'alamat_penerima_1', 'detail address'],
+        'product_name' => ['nama barang', 'deskripsi barang', 'deskripsi_barang', 'item name'],
+        'qty' => ['jumlah barang', 'jumlah', 'koli', 'item quantity'],
+        'price' => ['harga barang', 'harga paket', 'nilai_barang', 'parcel value'],
+    ];
+
     public function __construct() {
         $this->orderRepo = new OrderRepository();
     }
@@ -15,7 +30,13 @@ class OrderService {
     }
 
     public function find(int $id): ?array {
-        return $this->orderRepo->findById($id);
+        $order = $this->orderRepo->findById($id);
+        if ($order && !empty($order['extra_fields'])) {
+            $order['extra_fields_decoded'] = json_decode($order['extra_fields'], true) ?: [];
+        } else if ($order) {
+            $order['extra_fields_decoded'] = [];
+        }
+        return $order;
     }
 
     public function create(array $data): int {
@@ -80,5 +101,22 @@ class OrderService {
             if ($o) $orders[] = $o;
         }
         return $orders;
+    }
+
+    /**
+     * Map extra_fields values to standard order columns using FIELD_MAP.
+     */
+    public function mapTemplateToCommon(array $extraFields): array {
+        $mapped = [];
+        foreach (self::FIELD_MAP as $dbCol => $aliases) {
+            foreach ($extraFields as $colName => $value) {
+                $clean = strtolower(trim(ltrim($colName, '* ')));
+                if (in_array($clean, $aliases)) {
+                    $mapped[$dbCol] = $value;
+                    break;
+                }
+            }
+        }
+        return $mapped;
     }
 }
