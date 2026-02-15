@@ -1,3 +1,4 @@
+<?php $_globalView = \App\TenantContext::isSuperAdmin(); ?>
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/navbar.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
@@ -77,6 +78,7 @@
                                 <thead>
                                     <tr>
                                         <th width="40">#</th>
+                                        <?php if ($_globalView): ?><th>Tenant</th><?php endif; ?>
                                         <th width="60">Foto</th>
                                         <th>Nama</th>
                                         <th>Kode</th>
@@ -98,6 +100,9 @@
                                     ?>
                                     <tr>
                                         <td><?= $i + 1 ?></td>
+                                        <?php if ($_globalView): ?>
+                                        <td><span class="badge badge-secondary"><?= e($exp['tenant_name'] ?? 'Super Admin') ?></span></td>
+                                        <?php endif; ?>
                                         <td>
                                             <?php if ($photo && $photo['thumb_url']): ?>
                                                 <img src="<?= $photo['thumb_url'] ?>" alt="<?= e($exp['name']) ?>"
@@ -151,7 +156,7 @@
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($expeditions)): ?>
-                                    <tr><td colspan="6" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
+                                    <tr><td colspan="<?= $_globalView ? 7 : 6 ?>" class="text-center text-muted py-4">Belum ada ekspedisi.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>

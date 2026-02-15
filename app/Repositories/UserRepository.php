@@ -6,12 +6,23 @@ use PDO;
 
 class UserRepository {
     private $db;
+    private bool $globalView;
 
     public function __construct() {
         $this->db = getDB();
+        $this->globalView = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
+        if ($this->globalView) {
+            return $this->db->query(
+                "SELECT u.*, r.name as role_name, r.slug as role_slug, t.name as tenant_name
+                 FROM users u
+                 LEFT JOIN roles r ON r.id = u.role_id
+                 LEFT JOIN tenants t ON u.tenant_id = t.id
+                 ORDER BY t.name, u.id"
+            )->fetchAll();
+        }
         $stmt = $this->db->prepare(
             "SELECT u.*, r.name as role_name, r.slug as role_slug
              FROM users u

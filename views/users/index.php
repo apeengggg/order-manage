@@ -1,3 +1,4 @@
+<?php $_globalView = \App\TenantContext::isSuperAdmin(); ?>
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/navbar.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
@@ -74,6 +75,7 @@
                                 <thead>
                                     <tr>
                                         <th width="40">#</th>
+                                        <?php if ($_globalView): ?><th>Tenant</th><?php endif; ?>
                                         <th>Username</th>
                                         <th>Nama</th>
                                         <th>Role</th>
@@ -86,6 +88,9 @@
                                     <?php $isSelf = (int)$user['id'] === (int)auth('user_id'); ?>
                                     <tr>
                                         <td><?= $i + 1 ?></td>
+                                        <?php if ($_globalView): ?>
+                                        <td><span class="badge badge-secondary"><?= e($user['tenant_name'] ?? 'Super Admin') ?></span></td>
+                                        <?php endif; ?>
                                         <td>
                                             <code><?= e($user['username']) ?></code>
                                             <?php if ($isSelf): ?>
@@ -131,7 +136,7 @@
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($users)): ?>
-                                    <tr><td colspan="6" class="text-center text-muted py-4">Belum ada user.</td></tr>
+                                    <tr><td colspan="<?= $_globalView ? 7 : 6 ?>" class="text-center text-muted py-4">Belum ada user.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>

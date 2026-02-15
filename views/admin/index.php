@@ -1,3 +1,4 @@
+<?php $_globalView = \App\TenantContext::isSuperAdmin(); ?>
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/navbar.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
@@ -80,6 +81,7 @@
                                 <tr>
                                     <th width="40"><input type="checkbox" id="checkAll"></th>
                                     <th>#</th>
+                                    <?php if ($_globalView): ?><th>Tenant</th><?php endif; ?>
                                     <th>Customer</th>
                                     <th>Telepon</th>
                                     <th>Ekspedisi</th>
@@ -131,6 +133,9 @@
                                 <tr>
                                     <td><input type="checkbox" name="order_ids[]" value="<?= $o['id'] ?>" class="order-check"></td>
                                     <td><?= $i + 1 ?></td>
+                                    <?php if ($_globalView): ?>
+                                    <td><span class="badge badge-secondary"><?= e($o['tenant_name'] ?? 'Super Admin') ?></span></td>
+                                    <?php endif; ?>
                                     <td><strong><?= e($displayName ?: '-') ?></strong></td>
                                     <td><?= e($displayPhone ?: '-') ?></td>
                                     <td>

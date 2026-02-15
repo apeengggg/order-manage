@@ -5,20 +5,34 @@ use App\TenantContext;
 
 class ExpeditionRepository {
     private $db;
+    private bool $globalView;
 
     public function __construct() {
         $this->db = getDB();
+        $this->globalView = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
+        if ($this->globalView) {
+            return $this->db->query(
+                "SELECT e.*, t.name as tenant_name FROM expeditions e
+                 LEFT JOIN tenants t ON e.tenant_id = t.id
+                 WHERE e.is_active=1 ORDER BY t.name, e.name"
+            )->fetchAll();
+        }
         $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE is_active=1 AND tenant_id = ? ORDER BY name");
         $stmt->execute([TenantContext::id()]);
         return $stmt->fetchAll();
     }
 
     public function findById(int $id): ?array {
-        $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE id=? AND tenant_id = ?");
-        $stmt->execute([$id, TenantContext::id()]);
+        if ($this->globalView) {
+            $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE id=?");
+            $stmt->execute([$id]);
+        } else {
+            $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE id=? AND tenant_id = ?");
+            $stmt->execute([$id, TenantContext::id()]);
+        }
         return $stmt->fetch() ?: null;
     }
 

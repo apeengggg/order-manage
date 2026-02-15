@@ -109,7 +109,9 @@
                             <?php endif; ?>
                             <hr>
                             <small class="text-muted">
-                                <?php if (isSuperAdmin() && \App\TenantContext::isImpersonating()): ?>
+                                <?php if (isSuperAdmin() && !\App\TenantContext::isImpersonating()): ?>
+                                    Anda melihat data agregat dari semua tenant. Klik "Kelola Tenant" untuk impersonate tenant tertentu.
+                                <?php elseif (isSuperAdmin() && \App\TenantContext::isImpersonating()): ?>
                                     Anda sedang melihat data sebagai tenant ini. <a href="<?= BASE_URL ?>tenants/stopImpersonate">Kembali ke Super Admin</a>.
                                 <?php elseif (isCS()): ?>
                                     Anda bisa menginput data customer, melihat list order, edit dan hapus order yang belum diexport admin.

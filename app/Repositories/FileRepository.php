@@ -29,29 +29,50 @@ class FileRepository {
     }
 
     public function findByModule(string $module, int $moduleId): array {
-        $stmt = $this->db->prepare(
-            "SELECT f.*, u.name AS uploader_name
-             FROM files f
-             LEFT JOIN users u ON u.id = f.uploaded_by
-             WHERE f.module = ? AND f.module_id = ? AND f.tenant_id = ?
-             ORDER BY f.created_at DESC"
-        );
-        $stmt->execute([$module, $moduleId, TenantContext::id()]);
+        if (TenantContext::isSuperAdmin()) {
+            $stmt = $this->db->prepare(
+                "SELECT f.*, u.name AS uploader_name
+                 FROM files f LEFT JOIN users u ON u.id = f.uploaded_by
+                 WHERE f.module = ? AND f.module_id = ?
+                 ORDER BY f.created_at DESC"
+            );
+            $stmt->execute([$module, $moduleId]);
+        } else {
+            $stmt = $this->db->prepare(
+                "SELECT f.*, u.name AS uploader_name
+                 FROM files f LEFT JOIN users u ON u.id = f.uploaded_by
+                 WHERE f.module = ? AND f.module_id = ? AND f.tenant_id = ?
+                 ORDER BY f.created_at DESC"
+            );
+            $stmt->execute([$module, $moduleId, TenantContext::id()]);
+        }
         return $stmt->fetchAll();
     }
 
     public function findLatestByModuleIds(string $module, array $moduleIds): array {
         if (empty($moduleIds)) return [];
         $placeholders = implode(',', array_fill(0, count($moduleIds), '?'));
-        $params = array_merge([$module, TenantContext::id()], $moduleIds);
-        $stmt = $this->db->prepare(
-            "SELECT f.* FROM files f
-             INNER JOIN (
-                 SELECT module_id, MAX(id) as max_id
-                 FROM files WHERE module = ? AND tenant_id = ? AND module_id IN ($placeholders)
-                 GROUP BY module_id
-             ) latest ON f.id = latest.max_id"
-        );
+        if (TenantContext::isSuperAdmin()) {
+            $params = array_merge([$module], $moduleIds);
+            $stmt = $this->db->prepare(
+                "SELECT f.* FROM files f
+                 INNER JOIN (
+                     SELECT module_id, MAX(id) as max_id
+                     FROM files WHERE module = ? AND module_id IN ($placeholders)
+                     GROUP BY module_id
+                 ) latest ON f.id = latest.max_id"
+            );
+        } else {
+            $params = array_merge([$module, TenantContext::id()], $moduleIds);
+            $stmt = $this->db->prepare(
+                "SELECT f.* FROM files f
+                 INNER JOIN (
+                     SELECT module_id, MAX(id) as max_id
+                     FROM files WHERE module = ? AND tenant_id = ? AND module_id IN ($placeholders)
+                     GROUP BY module_id
+                 ) latest ON f.id = latest.max_id"
+            );
+        }
         $stmt->execute($params);
         $rows = $stmt->fetchAll();
         $map = [];

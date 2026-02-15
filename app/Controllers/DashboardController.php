@@ -13,11 +13,6 @@ class DashboardController {
     }
 
     public function index() {
-        // Super admin without impersonation → redirect to tenant management
-        if (TenantContext::isSuperAdmin() && !TenantContext::isImpersonating()) {
-            redirect('tenants');
-        }
-
         $stats = $this->orderService->getDashboardStats();
         extract($stats); // $totalOrders, $exported, $pending, $revenue
 

@@ -6,12 +6,21 @@ use PDO;
 
 class RoleRepository {
     private $db;
+    private bool $globalView;
 
     public function __construct() {
         $this->db = getDB();
+        $this->globalView = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
+        if ($this->globalView) {
+            return $this->db->query(
+                "SELECT r.*, t.name as tenant_name FROM roles r
+                 LEFT JOIN tenants t ON r.tenant_id = t.id
+                 ORDER BY t.name, r.id"
+            )->fetchAll();
+        }
         $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
         $stmt->execute([TenantContext::id()]);
         return $stmt->fetchAll();
@@ -52,6 +61,15 @@ class RoleRepository {
     }
 
     public function findAllWithUserCount(): array {
+        if ($this->globalView) {
+            return $this->db->query(
+                "SELECT r.*, t.name as tenant_name,
+                        (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
+                 FROM roles r
+                 LEFT JOIN tenants t ON r.tenant_id = t.id
+                 ORDER BY t.name, r.id"
+            )->fetchAll();
+        }
         $stmt = $this->db->prepare(
             "SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
              FROM roles r WHERE r.tenant_id = ? ORDER BY r.id"

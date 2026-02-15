@@ -1,3 +1,4 @@
+<?php $_globalView = \App\TenantContext::isSuperAdmin(); ?>
 <?php require __DIR__ . '/../layouts/header.php'; ?>
 <?php require __DIR__ . '/../layouts/navbar.php'; ?>
 <?php require __DIR__ . '/../layouts/sidebar.php'; ?>
@@ -63,6 +64,7 @@
                                 <thead>
                                     <tr>
                                         <th width="40">#</th>
+                                        <?php if ($_globalView): ?><th>Tenant</th><?php endif; ?>
                                         <th>Nama</th>
                                         <th>Slug</th>
                                         <th>Deskripsi</th>
@@ -74,6 +76,9 @@
                                     <?php foreach ($roles as $i => $role): ?>
                                     <tr>
                                         <td><?= $i + 1 ?></td>
+                                        <?php if ($_globalView): ?>
+                                        <td><span class="badge badge-secondary"><?= e($role['tenant_name'] ?? 'Super Admin') ?></span></td>
+                                        <?php endif; ?>
                                         <td><strong><?= e($role['name']) ?></strong></td>
                                         <td><code><?= e($role['slug']) ?></code></td>
                                         <td><?= e($role['description'] ?? '-') ?></td>
@@ -104,7 +109,7 @@
                                     </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($roles)): ?>
-                                    <tr><td colspan="6" class="text-center text-muted py-4">Belum ada role.</td></tr>
+                                    <tr><td colspan="<?= $_globalView ? 7 : 6 ?>" class="text-center text-muted py-4">Belum ada role.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>

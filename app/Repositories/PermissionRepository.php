@@ -20,16 +20,26 @@ class PermissionRepository {
     }
 
     public function findAllPermissions(): array {
-        $stmt = $this->db->prepare(
-            "SELECT rp.*, m.name as module_name, m.slug as module_slug, m.icon as module_icon
-             FROM role_permissions rp
-             INNER JOIN modules m ON m.id = rp.module_id
-             INNER JOIN roles r ON r.id = rp.role_id
-             WHERE m.is_active = 1 AND (r.tenant_id = ? OR r.tenant_id IS NULL)
-             ORDER BY rp.role_id, m.sort_order"
-        );
-        $stmt->execute([TenantContext::id()]);
-        $rows = $stmt->fetchAll();
+        if (TenantContext::isSuperAdmin()) {
+            $rows = $this->db->query(
+                "SELECT rp.*, m.name as module_name, m.slug as module_slug, m.icon as module_icon
+                 FROM role_permissions rp
+                 INNER JOIN modules m ON m.id = rp.module_id
+                 WHERE m.is_active = 1
+                 ORDER BY rp.role_id, m.sort_order"
+            )->fetchAll();
+        } else {
+            $stmt = $this->db->prepare(
+                "SELECT rp.*, m.name as module_name, m.slug as module_slug, m.icon as module_icon
+                 FROM role_permissions rp
+                 INNER JOIN modules m ON m.id = rp.module_id
+                 INNER JOIN roles r ON r.id = rp.role_id
+                 WHERE m.is_active = 1 AND (r.tenant_id = ? OR r.tenant_id IS NULL)
+                 ORDER BY rp.role_id, m.sort_order"
+            );
+            $stmt->execute([TenantContext::id()]);
+            $rows = $stmt->fetchAll();
+        }
         $grouped = [];
         foreach ($rows as $row) {
             $grouped[$row['role_id']][] = $row;
@@ -98,6 +108,13 @@ class PermissionRepository {
     }
 
     public function getRoles(): array {
+        if (TenantContext::isSuperAdmin()) {
+            return $this->db->query(
+                "SELECT r.*, t.name as tenant_name FROM roles r
+                 LEFT JOIN tenants t ON r.tenant_id = t.id
+                 ORDER BY t.name, r.id"
+            )->fetchAll();
+        }
         $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
         $stmt->execute([TenantContext::id()]);
         return $stmt->fetchAll();

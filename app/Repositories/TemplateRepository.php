@@ -12,10 +12,13 @@ class TemplateRepository {
     }
 
     public function findByExpeditionId(int $expeditionId): ?array {
-        $stmt = $this->db->prepare(
-            "SELECT * FROM expedition_templates WHERE expedition_id = ? AND tenant_id = ?"
-        );
-        $stmt->execute([$expeditionId, TenantContext::id()]);
+        if (TenantContext::isSuperAdmin()) {
+            $stmt = $this->db->prepare("SELECT * FROM expedition_templates WHERE expedition_id = ?");
+            $stmt->execute([$expeditionId]);
+        } else {
+            $stmt = $this->db->prepare("SELECT * FROM expedition_templates WHERE expedition_id = ? AND tenant_id = ?");
+            $stmt->execute([$expeditionId, TenantContext::id()]);
+        }
         $row = $stmt->fetch();
         return $row ?: null;
     }
@@ -23,13 +26,20 @@ class TemplateRepository {
     public function findByExpeditionIds(array $ids): array {
         if (empty($ids)) return [];
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $params = array_merge($ids, [TenantContext::id()]);
-        $stmt = $this->db->prepare(
-            "SELECT expedition_id, id, sheet_name, columns, file_id
-             FROM expedition_templates
-             WHERE expedition_id IN ($placeholders) AND tenant_id = ?"
-        );
-        $stmt->execute($params);
+        if (TenantContext::isSuperAdmin()) {
+            $stmt = $this->db->prepare(
+                "SELECT expedition_id, id, sheet_name, columns, file_id
+                 FROM expedition_templates WHERE expedition_id IN ($placeholders)"
+            );
+            $stmt->execute($ids);
+        } else {
+            $params = array_merge($ids, [TenantContext::id()]);
+            $stmt = $this->db->prepare(
+                "SELECT expedition_id, id, sheet_name, columns, file_id
+                 FROM expedition_templates WHERE expedition_id IN ($placeholders) AND tenant_id = ?"
+            );
+            $stmt->execute($params);
+        }
         $rows = $stmt->fetchAll();
         $map = [];
         foreach ($rows as $row) {

@@ -5,20 +5,37 @@ use App\TenantContext;
 
 class OrderRepository {
     private $db;
+    private bool $globalView;
 
     public function __construct() {
         $this->db = getDB();
+        $this->globalView = TenantContext::isSuperAdmin();
+    }
+
+    private function tenantWhere(string $alias = ''): string {
+        $col = $alias ? "$alias.tenant_id" : "tenant_id";
+        return $this->globalView ? "1=1" : "$col = ?";
+    }
+
+    private function tenantParams(): array {
+        return $this->globalView ? [] : [TenantContext::id()];
     }
 
     public function findAll(array $filters = []): array {
         $sql = "SELECT o.*, e.name as expedition_name, e.code as expedition_code,
-                       u.name as created_by_name, ue.name as exported_by_name
-                FROM orders o
+                       u.name as created_by_name, ue.name as exported_by_name";
+        if ($this->globalView) {
+            $sql .= ", t.name as tenant_name";
+        }
+        $sql .= " FROM orders o
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
-                LEFT JOIN users ue ON o.exported_by = ue.id
-                WHERE o.tenant_id = ?";
-        $params = [TenantContext::id()];
+                LEFT JOIN users ue ON o.exported_by = ue.id";
+        if ($this->globalView) {
+            $sql .= " LEFT JOIN tenants t ON o.tenant_id = t.id";
+        }
+        $sql .= " WHERE " . $this->tenantWhere('o');
+        $params = $this->tenantParams();
 
         if (!empty($filters['search'])) {
             $sql .= " AND (o.customer_name LIKE ? OR o.customer_phone LIKE ? OR o.product_name LIKE ? OR o.resi LIKE ?)";
@@ -41,12 +58,11 @@ class OrderRepository {
     }
 
     public function findById(int $id): ?array {
-        $stmt = $this->db->prepare(
-            "SELECT o.*, e.name as expedition_name
-             FROM orders o LEFT JOIN expeditions e ON o.expedition_id = e.id
-             WHERE o.id = ? AND o.tenant_id = ?"
-        );
-        $stmt->execute([$id, TenantContext::id()]);
+        $sql = "SELECT o.*, e.name as expedition_name
+                FROM orders o LEFT JOIN expeditions e ON o.expedition_id = e.id
+                WHERE o.id = ? AND " . $this->tenantWhere('o');
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge([$id], $this->tenantParams()));
         return $stmt->fetch() ?: null;
     }
 
@@ -101,35 +117,40 @@ class OrderRepository {
                 FROM orders o
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
-                WHERE o.expedition_id = ? AND o.tenant_id = ?";
+                WHERE o.expedition_id = ? AND " . $this->tenantWhere('o');
+        $params = array_merge([$expeditionId], $this->tenantParams());
         if (!$exportedOnly) $sql .= " AND o.is_exported = 0";
         $sql .= " ORDER BY o.created_at DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$expeditionId, TenantContext::id()]);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
     public function countAll(): int {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ?");
-        $stmt->execute([TenantContext::id()]);
+        $sql = "SELECT COUNT(*) FROM orders WHERE " . $this->tenantWhere();
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($this->tenantParams());
         return (int)$stmt->fetchColumn();
     }
 
     public function countExported(): int {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ? AND is_exported=1");
-        $stmt->execute([TenantContext::id()]);
+        $sql = "SELECT COUNT(*) FROM orders WHERE " . $this->tenantWhere() . " AND is_exported=1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($this->tenantParams());
         return (int)$stmt->fetchColumn();
     }
 
     public function countPending(): int {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM orders WHERE tenant_id = ? AND is_exported=0");
-        $stmt->execute([TenantContext::id()]);
+        $sql = "SELECT COUNT(*) FROM orders WHERE " . $this->tenantWhere() . " AND is_exported=0";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($this->tenantParams());
         return (int)$stmt->fetchColumn();
     }
 
     public function totalRevenue(): float {
-        $stmt = $this->db->prepare("SELECT COALESCE(SUM(total),0) FROM orders WHERE tenant_id = ?");
-        $stmt->execute([TenantContext::id()]);
+        $sql = "SELECT COALESCE(SUM(total),0) FROM orders WHERE " . $this->tenantWhere();
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($this->tenantParams());
         return (float)$stmt->fetchColumn();
     }
 }
