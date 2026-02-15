@@ -107,6 +107,26 @@ function validate(array $data, array $rules, array $messages = [], array $attrib
     return new \App\Validation\Validator($data, $rules, $messages, $attributes);
 }
 
+/**
+ * Get app setting from database with static cache
+ */
+function appSetting(string $key, $default = null) {
+    static $cache = null;
+    if ($cache === null) {
+        try {
+            $db = getDB();
+            $stmt = $db->query("SELECT setting_key, setting_value FROM app_settings");
+            $cache = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $cache[$row['setting_key']] = $row['setting_value'];
+            }
+        } catch (\Exception $e) {
+            $cache = [];
+        }
+    }
+    return $cache[$key] ?? $default;
+}
+
 function checkPermission($moduleSlug, $type = 'can_view') {
     if (!hasPermission($moduleSlug, $type)) {
         // For AJAX requests, return JSON

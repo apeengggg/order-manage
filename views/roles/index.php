@@ -21,7 +21,7 @@
         <div class="container-fluid">
             <div class="row">
                 <!-- Form Tambah Role -->
-                <div class="col-md-4">
+                <div class="col-12 col-lg-6">
                     <div class="card card-primary">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-plus mr-1"></i> Tambah Role</h3>
@@ -52,12 +52,13 @@
                 </div>
 
                 <!-- List Role -->
-                <div class="col-md-8">
+                <div class="col-12 col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-user-tag mr-1"></i> Daftar Role</h3>
                         </div>
                         <div class="card-body p-0">
+                            <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -107,6 +108,7 @@
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -117,7 +119,7 @@
 
 <!-- Modal Edit Role -->
 <div class="modal fade" id="editRoleModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <form method="POST" id="editRoleForm">
             <div class="modal-content">
                 <div class="modal-header bg-warning">

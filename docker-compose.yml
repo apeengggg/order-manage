@@ -1,0 +1,133 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: order-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+      - storage_data:/var/www/html/storage/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-order_user}
+      DB_PASS: ${DB_PASS:-order_password}
+      DB_NAME: ${DB_NAME:-order_management}
+      APP_NAME: ${APP_NAME:-Order Management System}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio:9000}
+      MINIO_BUCKET: ${MINIO_BUCKET:-uploads}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - order-net
+
+  db:
+    image: mysql:8.0
+    container_name: order-db
+    restart: unless-stopped
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-order_management}
+      MYSQL_USER: ${DB_USER:-order_user}
+      MYSQL_PASSWORD: ${DB_PASS:-order_password}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASS:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - order-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: order-minio
+    restart: unless-stopped
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - order-net
+
+  # MinIO auto-setup: create default bucket on first run
+  minio-setup:
+    image: minio/mc:latest
+    container_name: order-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 $${MINIO_ACCESS_KEY} $${MINIO_SECRET_KEY};
+      mc mb myminio/$${MINIO_BUCKET} --ignore-existing;
+      mc anonymous set download myminio/$${MINIO_BUCKET};
+      echo 'Bucket ready.';
+      "
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-uploads}
+    networks:
+      - order-net
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: order-pma
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASS:-root_password}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - order-net
+
+volumes:
+  db_data:
+    name: order-db-data
+  vendor_data:
+    name: order-vendor-data
+  storage_data:
+    name: order-storage-data
+  minio_data:
+    name: order-minio-data
+
+networks:
+  order-net:
+    driver: bridge

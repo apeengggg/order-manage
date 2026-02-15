@@ -23,6 +23,7 @@ use App\Controllers\ModuleController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\FileController;
+use App\Controllers\SettingController;
 
 // Parse URL from query string OR REQUEST_URI
 $url = '';
@@ -42,7 +43,8 @@ $action = $segments[1] ?? 'index';
 $id = $segments[2] ?? null;
 
 // Auth check - redirect to login if not logged in
-if (!isLoggedIn() && $page !== 'auth') {
+// Allow files/serve without auth (for login page logo/background)
+if (!isLoggedIn() && $page !== 'auth' && !($page === 'files' && $action === 'serve')) {
     redirect('auth/login');
 }
 
@@ -100,8 +102,14 @@ switch ($page) {
         break;
 
     case 'files':
-        if (!isLoggedIn()) redirect('auth/login');
+        // Allow serve action without login (for login page logo/bg)
+        if ($action !== 'serve' && !isLoggedIn()) redirect('auth/login');
         $ctrl = new FileController();
+        break;
+
+    case 'settings':
+        if (!isLoggedIn()) redirect('auth/login');
+        $ctrl = new SettingController();
         break;
 
     default:

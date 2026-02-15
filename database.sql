@@ -122,6 +122,15 @@ CREATE TABLE `files` (
 ) ENGINE=InnoDB;
 
 -- ============================================
+-- Table: app_settings
+-- ============================================
+CREATE TABLE `app_settings` (
+  `setting_key` VARCHAR(50) PRIMARY KEY,
+  `setting_value` LONGTEXT DEFAULT NULL,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================================
 -- Table: expedition_templates
 -- ============================================
 CREATE TABLE `expedition_templates` (
@@ -174,7 +183,19 @@ INSERT INTO `modules` (`id`, `name`, `slug`, `icon`, `url`, `parent_id`, `sort_o
 (6, 'Kelola Modul',       'modules',        'fas fa-cubes',          'modules',           NULL, 6),
 (7, 'Kelola Permission',  'permissions',    'fas fa-user-shield',    'permissions',       NULL, 7),
 (8, 'Kelola Role',        'roles',          'fas fa-user-tag',       'roles',             NULL, 8),
-(9, 'Kelola User',        'users',          'fas fa-users',          'users',             NULL, 9);
+(9, 'Kelola User',        'users',          'fas fa-users',          'users',             NULL, 9),
+(10, 'Pengaturan',        'settings',       'fas fa-cog',            'settings',          NULL, 10);
+
+-- ============================================
+-- Default App Settings
+-- ============================================
+INSERT INTO `app_settings` (`setting_key`, `setting_value`) VALUES
+('app_name', 'Order Management System'),
+('dark_mode', '0'),
+('primary_color', '#007bff'),
+('login_bg_color', '#667eea'),
+('logo_file_id', NULL),
+('login_bg_file_id', NULL);
 
 -- ============================================
 -- Default Permissions: Admin (semua akses)
@@ -188,7 +209,8 @@ INSERT INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `
 (1, 6, 1, 1, 1, 1, 1, 1, 1),
 (1, 7, 1, 1, 1, 1, 1, 1, 1),
 (1, 8, 1, 1, 1, 1, 1, 1, 1),
-(1, 9, 1, 1, 1, 1, 1, 1, 1);
+(1, 9, 1, 1, 1, 1, 1, 1, 1),
+(1, 10, 1, 1, 1, 1, 1, 1, 1);
 
 -- ============================================
 -- Default Permissions: CS (terbatas)
@@ -202,7 +224,8 @@ INSERT INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `
 (2, 6, 0, 0, 0, 0, 0, 0, 0),
 (2, 7, 0, 0, 0, 0, 0, 0, 0),
 (2, 8, 0, 0, 0, 0, 0, 0, 0),
-(2, 9, 0, 0, 0, 0, 0, 0, 0);
+(2, 9, 0, 0, 0, 0, 0, 0, 0),
+(2, 10, 0, 0, 0, 0, 0, 0, 0);
 
 
 -- ============================================
@@ -307,3 +330,27 @@ SELECT 1, id, 1, 1, 1, 1, 1, 1, 1 FROM `modules` WHERE `slug` = 'users';
 
 INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
 SELECT 2, id, 0, 0, 0, 0, 0, 0, 0 FROM `modules` WHERE `slug` = 'users';
+
+-- [Migration 6] Tambah tabel app_settings + modul Pengaturan
+CREATE TABLE IF NOT EXISTS `app_settings` (
+  `setting_key` VARCHAR(50) PRIMARY KEY,
+  `setting_value` LONGTEXT DEFAULT NULL,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO `app_settings` (`setting_key`, `setting_value`) VALUES
+('app_name', 'Order Management System'),
+('dark_mode', '0'),
+('primary_color', '#007bff'),
+('login_bg_color', '#667eea'),
+('logo_file_id', NULL),
+('login_bg_file_id', NULL);
+
+INSERT IGNORE INTO `modules` (`name`, `slug`, `icon`, `url`, `parent_id`, `sort_order`)
+VALUES ('Pengaturan', 'settings', 'fas fa-cog', 'settings', NULL, 10);
+
+INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
+SELECT 1, id, 1, 1, 1, 1, 1, 1, 1 FROM `modules` WHERE `slug` = 'settings';
+
+INSERT IGNORE INTO `role_permissions` (`role_id`, `module_id`, `can_view`, `can_add`, `can_edit`, `can_delete`, `can_view_detail`, `can_upload`, `can_download`)
+SELECT 2, id, 0, 0, 0, 0, 0, 0, 0 FROM `modules` WHERE `slug` = 'settings';

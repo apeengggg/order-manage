@@ -118,6 +118,16 @@ class FileController {
         // Sanitize: remove directory traversal attempts
         $relativePath = str_replace(['../', '..\\', '..'], '', $relativePath);
 
+        // Guard: only settings files (logo/bg) allowed without login
+        if (!isLoggedIn()) {
+            $isSettingsFile = strpos($relativePath, 'settings/') === 0
+                || strpos($relativePath, 'thumbnails/settings/') === 0;
+            if (!$isSettingsFile) {
+                http_response_code(403);
+                exit;
+            }
+        }
+
         $fullPath = ROOT_PATH . '/storage/uploads/' . $relativePath;
 
         if (!file_exists($fullPath) || !is_file($fullPath)) {

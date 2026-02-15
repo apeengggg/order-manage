@@ -54,7 +54,7 @@ $faIcons = [
         <div class="container-fluid">
             <div class="row">
                 <!-- Form Tambah -->
-                <div class="col-md-5">
+                <div class="col-12 col-lg-6">
                     <div class="card card-primary">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-plus mr-1"></i> Tambah Modul</h3>
@@ -103,7 +103,7 @@ $faIcons = [
                 </div>
 
                 <!-- List -->
-                <div class="col-md-7">
+                <div class="col-12 col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-cubes mr-1"></i> Daftar Modul</h3>
@@ -114,6 +114,7 @@ $faIcons = [
                             </div>
                         </div>
                         <div class="card-body p-0">
+                            <div class="table-responsive">
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
@@ -153,6 +154,7 @@ $faIcons = [
                                     <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -163,7 +165,7 @@ $faIcons = [
 
 <!-- Icon Picker Modal -->
 <div class="modal fade" id="iconPickerModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="fas fa-icons mr-1"></i> Pilih Icon</h5>
@@ -187,7 +189,7 @@ $faIcons = [
 
 <!-- Edit Module Modal -->
 <div class="modal fade" id="editModuleModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <form method="POST" id="editModuleForm">
             <div class="modal-content">
                 <div class="modal-header bg-warning">

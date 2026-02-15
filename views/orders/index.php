@@ -70,6 +70,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table id="dataTable" class="table table-bordered table-striped table-hover">
                         <thead>
                             <tr>
@@ -170,8 +171,21 @@
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-sm btn-info btn-detail" title="Detail"
+                                        data-id="<?= $o['id'] ?>"
+                                        data-customer="<?= e($o['customer_name']) ?>"
+                                        data-phone="<?= e($o['customer_phone']) ?>"
+                                        data-address="<?= e($o['customer_address'] ?? '') ?>"
+                                        data-product="<?= e($o['product_name'] ?? '') ?>"
+                                        data-qty="<?= $o['qty'] ?? 0 ?>"
+                                        data-price="<?= $o['price'] ?? 0 ?>"
+                                        data-total="<?= $o['total'] ?? 0 ?>"
+                                        data-expedition="<?= e($o['expedition_name'] ?? '-') ?>"
+                                        data-resi="<?= e($o['resi'] ?? '') ?>"
+                                        data-notes="<?= e($o['notes'] ?? '') ?>"
                                         data-extra="<?= e($o['extra_fields'] ?? '{}') ?>"
-                                        data-expedition="<?= e($o['expedition_name'] ?? '-') ?>">
+                                        data-exported="<?= $o['is_exported'] ? '1' : '0' ?>"
+                                        data-created="<?= e($o['created_at'] ?? '') ?>"
+                                        data-createdby="<?= e($o['created_by_name'] ?? '') ?>">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     <?php if (!$o['is_exported']): ?>
@@ -193,46 +207,85 @@
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 </div>
 
+<?php require __DIR__ . '/../layouts/footer.php'; ?>
 <script>
 $(function() {
-    // Detail button - show all extra_fields in SweetAlert
+    function esc(str) { return $('<span>').text(str || '').html(); }
+    function formatRp(num) {
+        num = parseFloat(num) || 0;
+        return 'Rp ' + num.toLocaleString('id-ID');
+    }
+
     $(document).on('click', '.btn-detail', function() {
+        var d = $(this).data();
         var extra = {};
         try { extra = JSON.parse($(this).attr('data-extra')); } catch(e) {}
-        var expedition = $(this).data('expedition');
 
-        var html = '<table class="table table-sm table-bordered text-left" style="font-size:13px;">';
-        var hasData = false;
+        var html = '<div class="text-left" style="font-size:13px;">';
+        html += '<table class="table table-sm table-bordered mb-3">';
+
+        // Standard fields
+        var fields = [
+            ['ID Order', '#' + d.id],
+            ['Customer', d.customer],
+            ['Telepon', d.phone],
+            ['Alamat', d.address],
+            ['Produk', d.product],
+            ['Qty', d.qty],
+            ['Harga', formatRp(d.price)],
+            ['Total', formatRp(d.total)],
+            ['Ekspedisi', d.expedition],
+            ['Resi', d.resi],
+            ['Catatan', d.notes],
+            ['Status', d.exported === '1' ? '<span class="badge badge-success">Exported</span>' : '<span class="badge badge-warning">Pending</span>'],
+            ['Dibuat oleh', d.createdby],
+            ['Tanggal', d.created]
+        ];
+
+        for (var i = 0; i < fields.length; i++) {
+            var val = fields[i][1];
+            if (val === null || val === undefined || String(val).trim() === '' || val === '0' || val === 'Rp 0') continue;
+            html += '<tr><td class="font-weight-bold" style="width:35%;">' + esc(fields[i][0]) + '</td>';
+            if (fields[i][0] === 'Status') {
+                html += '<td>' + val + '</td></tr>';
+            } else {
+                html += '<td>' + esc(String(val)) + '</td></tr>';
+            }
+        }
+        html += '</table>';
+
+        // Extra fields from template
+        var hasExtra = false;
+        var extraHtml = '<h6 class="font-weight-bold mb-2">Data Template</h6>';
+        extraHtml += '<table class="table table-sm table-bordered">';
         for (var key in extra) {
             if (!extra.hasOwnProperty(key)) continue;
             var val = extra[key];
             if (val === null || val === undefined || String(val).trim() === '') continue;
-            hasData = true;
-            // Clean key: remove * prefix and // bilingual
+            hasExtra = true;
             var cleanKey = key.replace(/^\*\s*/, '');
             if (cleanKey.indexOf('//') !== -1) cleanKey = cleanKey.split('//')[0].trim();
-            html += '<tr><td class="font-weight-bold" style="width:40%;">' + $('<span>').text(cleanKey).html() + '</td>';
-            html += '<td>' + $('<span>').text(val).html() + '</td></tr>';
+            extraHtml += '<tr><td class="font-weight-bold" style="width:35%;">' + esc(cleanKey) + '</td>';
+            extraHtml += '<td>' + esc(String(val)) + '</td></tr>';
         }
-        html += '</table>';
+        extraHtml += '</table>';
 
-        if (!hasData) {
-            html = '<p class="text-muted">Tidak ada data.</p>';
-        }
+        if (hasExtra) html += extraHtml;
+        html += '</div>';
 
         Swal.fire({
-            title: 'Detail Order',
-            html: '<p class="mb-2"><strong>Ekspedisi:</strong> ' + $('<span>').text(expedition).html() + '</p>' + html,
-            width: 600,
+            title: 'Detail Order #' + d.id,
+            html: html,
+            width: 650,
             confirmButtonText: 'Tutup'
         });
     });
 });
 </script>
-<?php require __DIR__ . '/../layouts/footer.php'; ?>

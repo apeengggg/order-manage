@@ -1,6 +1,8 @@
     <!-- Main Footer -->
     <footer class="main-footer">
-        <strong>&copy; <?= date('Y') ?> <?= APP_NAME ?></strong>
+        <strong>&copy; <?= date('Y') ?> <?= e(appSetting('app_name', APP_NAME)) ?></strong>
+        <span class="ml-2 text-muted">|</span>
+        <span class="ml-2">Licensed by <strong>Mohamad Irfan Manaf</strong></span>
         <div class="float-right d-none d-sm-inline-block">
             <b>Version</b> 1.0.0
         </div>

@@ -21,7 +21,7 @@
         <div class="container-fluid">
             <div class="row">
                 <!-- Form Tambah User -->
-                <div class="col-md-4">
+                <div class="col-12 col-lg-6">
                     <div class="card card-primary">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-user-plus mr-1"></i> Tambah User</h3>
@@ -60,7 +60,7 @@
                 </div>
 
                 <!-- List User -->
-                <div class="col-md-8">
+                <div class="col-12 col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-users mr-1"></i> Daftar User</h3>
@@ -69,6 +69,7 @@
                             </div>
                         </div>
                         <div class="card-body p-0">
+                            <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -134,6 +135,7 @@
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -144,7 +146,7 @@
 
 <!-- Modal Edit User -->
 <div class="modal fade" id="editUserModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <form method="POST" id="editUserForm">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
@@ -180,7 +182,7 @@
 
 <!-- Modal Change Password -->
 <div class="modal fade" id="changePwdModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <form method="POST" id="changePwdForm">
             <div class="modal-content">
                 <div class="modal-header bg-info">

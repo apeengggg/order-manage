@@ -74,6 +74,7 @@
                             </button>
                         </div>
 
+                        <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
@@ -144,6 +145,7 @@
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                     </form>
                     <?php endif; ?>
                 </div>

@@ -1,0 +1,13 @@
+.git
+.claude
+.vscode
+.idea
+*.jpeg
+*.jpg
+*.png
+*.log
+.env
+vendor/
+storage/uploads/*
+!storage/uploads/.gitkeep
+node_modules/

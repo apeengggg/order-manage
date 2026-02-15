@@ -1,5 +1,5 @@
 <!-- Navbar -->
-<nav class="main-header navbar navbar-expand navbar-white navbar-light">
+<nav class="main-header navbar navbar-expand navbar-white navbar-light" id="mainNavbar">
     <!-- Left -->
     <ul class="navbar-nav">
         <li class="nav-item">
@@ -8,6 +8,11 @@
     </ul>
     <!-- Right -->
     <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+            <a class="nav-link" href="#" id="btnToggleDarkMode" role="button" title="Toggle Dark Mode">
+                <i class="fas fa-moon"></i>
+            </a>
+        </li>
         <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">
                 <i class="fas fa-user-circle mr-1"></i> <?= e(auth('name')) ?>

@@ -21,7 +21,7 @@
         <div class="container-fluid">
             <div class="row">
                 <!-- Form Tambah -->
-                <div class="col-md-4">
+                <div class="col-12 col-lg-6">
                     <div class="card card-primary">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-plus mr-1"></i> Tambah Ekspedisi</h3>
@@ -66,12 +66,13 @@
                 </div>
 
                 <!-- List -->
-                <div class="col-md-8">
+                <div class="col-12 col-lg-6">
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-truck mr-1"></i> Daftar Ekspedisi</h3>
                         </div>
                         <div class="card-body p-0">
+                            <div class="table-responsive">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -154,6 +155,7 @@
                                     <?php endif; ?>
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -164,7 +166,7 @@
 
 <!-- Modal Edit -->
 <div class="modal fade" id="editExpModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable">
         <form method="POST" id="editExpForm" enctype="multipart/form-data">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
@@ -206,7 +208,7 @@
 
 <!-- Modal Template Upload -->
 <div class="modal fade" id="templateExpModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="fas fa-file-excel mr-1"></i> Template - <span id="templateExpName"></span></h5>
@@ -267,7 +269,7 @@
 
 <!-- Modal Options Manager (for large option lists) -->
 <div class="modal fade" id="optionsManagerModal" tabindex="-1" data-backdrop="static">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="fas fa-list mr-1"></i> Kelola Opsi</h5>
@@ -330,7 +332,7 @@
 
 <!-- Modal Files -->
 <div class="modal fade" id="filesExpModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header bg-info">
                 <h5 class="modal-title"><i class="fas fa-paperclip mr-1"></i> File Attachment - <span id="filesExpName"></span></h5>

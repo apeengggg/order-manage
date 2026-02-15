@@ -1,8 +1,21 @@
 <!-- Main Sidebar -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
+<?php
+    $_sidebarLogo = appSetting('logo_file_id');
+    $_sidebarLogoUrl = null;
+    if ($_sidebarLogo) {
+        $fs = new \App\Services\FileService();
+        $f = $fs->getFile((int)$_sidebarLogo);
+        if ($f) $_sidebarLogoUrl = $fs->getThumbnailUrl($f) ?: $fs->getFileUrl($f);
+    }
+    ?>
     <a href="<?= BASE_URL ?>dashboard" class="brand-link">
-        <i class="fas fa-shipping-fast brand-image ml-3" style="font-size:1.5rem; line-height:1.8;"></i>
-        <span class="brand-text font-weight-light"><b>Order</b> Manager</span>
+        <?php if ($_sidebarLogoUrl): ?>
+            <img src="<?= e($_sidebarLogoUrl) ?>" alt="Logo" class="brand-image img-circle elevation-3" style="opacity:.8">
+        <?php else: ?>
+            <i class="fas fa-shipping-fast brand-image ml-3" style="font-size:1.5rem; line-height:1.8;"></i>
+        <?php endif; ?>
+        <span class="brand-text font-weight-light"><?= e(appSetting('app_name', 'Order Manager')) ?></span>
     </a>
 
     <div class="sidebar">

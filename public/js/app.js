@@ -148,9 +148,40 @@ var App = (function($) {
     }
 
     // ========================================
+    // Dark Mode (per-user, localStorage)
+    // ========================================
+    function applyDarkMode(enabled) {
+        if (enabled) {
+            $('body').addClass('dark-mode');
+            $('#mainNavbar').removeClass('navbar-white navbar-light').addClass('navbar-dark');
+            $('#btnToggleDarkMode i').removeClass('fa-moon').addClass('fa-sun');
+        } else {
+            $('body').removeClass('dark-mode');
+            $('#mainNavbar').addClass('navbar-white navbar-light').removeClass('navbar-dark');
+            $('#btnToggleDarkMode i').removeClass('fa-sun').addClass('fa-moon');
+        }
+    }
+
+    function toggleDarkMode() {
+        var isDark = localStorage.getItem('dark_mode') === '1';
+        var newVal = isDark ? '0' : '1';
+        localStorage.setItem('dark_mode', newVal);
+        applyDarkMode(!isDark);
+    }
+
+    // ========================================
     // Global Init on DOM Ready
     // ========================================
     $(function() {
+        // Apply dark mode from localStorage
+        var isDark = localStorage.getItem('dark_mode') === '1';
+        applyDarkMode(isDark);
+
+        // Dark mode toggle button
+        $('#btnToggleDarkMode').on('click', function(e) {
+            e.preventDefault();
+            toggleDarkMode();
+        });
         // Init DataTable if exists
         if ($('#dataTable').length) {
             initDataTable('#dataTable');
@@ -163,6 +194,74 @@ var App = (function($) {
         $(document).on('click', '.btn-delete', function(e) {
             e.preventDefault();
             confirmDelete($(this).closest('form'));
+        });
+
+        // Global form confirmation handler for POST forms
+        // Detects action type from URL and shows appropriate SweetAlert
+        $(document).on('submit', 'form[method="POST"]', function(e) {
+            var $form = $(this);
+            if ($form.data('confirmed')) {
+                $form.removeData('confirmed');
+                return;
+            }
+
+            var action = ($form.attr('action') || '').toLowerCase();
+            var formId = ($form.attr('id') || '').toLowerCase();
+
+            // Skip: login, export, delete forms (delete has its own handler)
+            if (action.indexOf('auth/login') !== -1) return;
+            if (action.indexOf('/export') !== -1) return;
+            if (action.indexOf('/delete') !== -1) return;
+
+            // Determine action type
+            var conf = { title: 'Konfirmasi', text: '', icon: 'question', btnText: 'Ya, Lanjutkan', btnColor: '#007bff' };
+
+            if (action.indexOf('/create') !== -1) {
+                conf.title = 'Tambah Data';
+                conf.text = 'Apakah Anda yakin ingin menyimpan data baru?';
+                conf.icon = 'question';
+                conf.btnText = 'Ya, Simpan';
+                conf.btnColor = '#007bff';
+            } else if (action.indexOf('/edit') !== -1 || formId.indexOf('edit') !== -1) {
+                conf.title = 'Simpan Perubahan';
+                conf.text = 'Apakah Anda yakin ingin menyimpan perubahan?';
+                conf.icon = 'question';
+                conf.btnText = 'Ya, Simpan';
+                conf.btnColor = '#e0a800';
+            } else if (action.indexOf('/update') !== -1 || formId.indexOf('setting') !== -1 || formId.indexOf('permission') !== -1) {
+                conf.title = 'Simpan Perubahan';
+                conf.text = 'Apakah Anda yakin ingin menyimpan perubahan?';
+                conf.icon = 'question';
+                conf.btnText = 'Ya, Simpan';
+                conf.btnColor = '#e0a800';
+            } else if (formId.indexOf('changepwd') !== -1 || formId.indexOf('password') !== -1) {
+                conf.title = 'Ubah Password';
+                conf.text = 'Apakah Anda yakin ingin mengubah password?';
+                conf.icon = 'warning';
+                conf.btnText = 'Ya, Ubah';
+                conf.btnColor = '#e0a800';
+            } else {
+                // Unknown POST form, skip confirmation
+                return;
+            }
+
+            e.preventDefault();
+
+            Swal.fire({
+                title: conf.title,
+                text: conf.text,
+                icon: conf.icon,
+                showCancelButton: true,
+                confirmButtonColor: conf.btnColor,
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: conf.btnText,
+                cancelButtonText: 'Batal'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    $form.data('confirmed', true);
+                    $form.submit();
+                }
+            });
         });
 
         // Init price calculator if fields exist
