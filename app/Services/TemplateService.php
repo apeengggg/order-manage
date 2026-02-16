@@ -8,10 +8,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class TemplateService {
     private $templateRepo;
     private $fileService;
+    private AuditService $audit;
 
     public function __construct() {
         $this->templateRepo = new TemplateRepository();
         $this->fileService = new FileService();
+        $this->audit = new AuditService();
     }
 
     /**
@@ -100,6 +102,9 @@ class TemplateService {
         $fileResult = $this->fileService->upload($uploadedFile, 'expedition-templates', $expeditionId, $userId);
         $fileId = $fileResult['success'] ? ($fileResult['file_id'] ?? null) : null;
 
+        // Check if template already exists (for audit: create vs update)
+        $oldTemplate = $this->templateRepo->findByExpeditionId($expeditionId);
+
         // Upsert template
         $this->templateRepo->upsert([
             'expedition_id' => $expeditionId,
@@ -108,6 +113,20 @@ class TemplateService {
             'columns' => json_encode($columns, JSON_UNESCAPED_UNICODE),
             'uploaded_by' => $userId,
         ]);
+
+        // Get expedition name for audit label
+        $db = getDB();
+        $expStmt = $db->prepare("SELECT name FROM expeditions WHERE id = ?");
+        $expStmt->execute([$expeditionId]);
+        $expName = $expStmt->fetchColumn() ?: "Expedition #$expeditionId";
+
+        $newData = ['sheet_name' => $sheetName, 'columns_count' => count($columns), 'file_id' => $fileId];
+        if ($oldTemplate) {
+            $oldData = ['sheet_name' => $oldTemplate['sheet_name'], 'columns_count' => count(json_decode($oldTemplate['columns'], true) ?: []), 'file_id' => $oldTemplate['file_id']];
+            $this->audit->log('update', 'template', (string)$expeditionId, $expName, $oldData, $newData);
+        } else {
+            $this->audit->log('create', 'template', (string)$expeditionId, $expName, null, $newData);
+        }
 
         return [
             'success' => true,
@@ -286,6 +305,14 @@ class TemplateService {
         $json = json_encode($updated, JSON_UNESCAPED_UNICODE);
         $this->templateRepo->updateColumns($expeditionId, $json);
 
+        // Audit log
+        $db = getDB();
+        $expStmt = $db->prepare("SELECT name FROM expeditions WHERE id = ?");
+        $expStmt->execute([$expeditionId]);
+        $expName = $expStmt->fetchColumn() ?: "Expedition #$expeditionId";
+        $this->audit->log('update', 'template', (string)$expeditionId, $expName,
+            ['columns' => $existingColumns], ['columns' => $updated]);
+
         return ['success' => true, 'message' => 'Kolom template berhasil diupdate.', 'columns' => $updated];
     }
 
@@ -323,6 +350,18 @@ class TemplateService {
      * Delete template for an expedition.
      */
     public function deleteTemplate(int $expeditionId): bool {
-        return $this->templateRepo->delete($expeditionId);
+        $old = $this->templateRepo->findByExpeditionId($expeditionId);
+        $result = $this->templateRepo->delete($expeditionId);
+
+        if ($result && $old) {
+            $db = getDB();
+            $expStmt = $db->prepare("SELECT name FROM expeditions WHERE id = ?");
+            $expStmt->execute([$expeditionId]);
+            $expName = $expStmt->fetchColumn() ?: "Expedition #$expeditionId";
+            $this->audit->log('delete', 'template', (string)$expeditionId, $expName,
+                ['sheet_name' => $old['sheet_name'], 'file_id' => $old['file_id']], null);
+        }
+
+        return $result;
     }
 }

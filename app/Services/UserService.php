@@ -7,10 +7,12 @@ use App\Repositories\RoleRepository;
 class UserService {
     private $userRepo;
     private $roleRepo;
+    private AuditService $audit;
 
     public function __construct() {
         $this->userRepo = new UserRepository();
         $this->roleRepo = new RoleRepository();
+        $this->audit = new AuditService();
     }
 
     public function getAll(): array {
@@ -27,16 +29,36 @@ class UserService {
 
     public function create(array $data): int {
         $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        return $this->userRepo->create($data);
+        $id = $this->userRepo->create($data);
+
+        $logData = $data;
+        unset($logData['password']);
+        $this->audit->log('create', 'user', $id, $data['username'] ?? '', null, $logData);
+
+        return $id;
     }
 
     public function update(int $id, array $data): bool {
-        return $this->userRepo->update($id, $data);
+        $old = $this->userRepo->findById($id);
+        $result = $this->userRepo->update($id, $data);
+
+        if ($result && $old) {
+            $this->audit->log('update', 'user', $id, $old['username'] ?? '', $old, $data);
+        }
+
+        return $result;
     }
 
     public function changePassword(int $id, string $password): bool {
+        $user = $this->userRepo->findById($id);
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        return $this->userRepo->updatePassword($id, $hash);
+        $result = $this->userRepo->updatePassword($id, $hash);
+
+        if ($result && $user) {
+            $this->audit->log('update', 'user', $id, $user['username'] ?? '', null, ['password' => '***changed***']);
+        }
+
+        return $result;
     }
 
     public function delete(int $id, int $currentUserId): array {
@@ -44,7 +66,13 @@ class UserService {
             return ['success' => false, 'message' => 'Tidak bisa menghapus akun sendiri.'];
         }
 
+        $old = $this->userRepo->findById($id);
         $this->userRepo->delete($id);
+
+        if ($old) {
+            $this->audit->log('delete', 'user', $id, $old['username'] ?? '', $old, null);
+        }
+
         return ['success' => true, 'message' => 'User berhasil dihapus.'];
     }
 

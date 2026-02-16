@@ -25,6 +25,7 @@ use App\Controllers\UserController;
 use App\Controllers\FileController;
 use App\Controllers\SettingController;
 use App\Controllers\TenantController;
+use App\Controllers\AuditController;
 
 // Parse URL from query string OR REQUEST_URI
 $url = '';
@@ -118,6 +119,12 @@ switch ($page) {
         if (!isLoggedIn()) redirect('auth/login');
         checkPermission('tenants', 'can_view');
         $ctrl = new TenantController();
+        break;
+
+    case 'audit':
+        if (!isLoggedIn()) redirect('auth/login');
+        checkPermission('audit', 'can_view');
+        $ctrl = new AuditController();
         break;
 
     default:

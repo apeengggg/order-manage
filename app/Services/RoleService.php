@@ -7,10 +7,12 @@ use App\Repositories\PermissionRepository;
 class RoleService {
     private $roleRepo;
     private $permRepo;
+    private AuditService $audit;
 
     public function __construct() {
         $this->roleRepo = new RoleRepository();
         $this->permRepo = new PermissionRepository();
+        $this->audit = new AuditService();
     }
 
     public function getAll(): array {
@@ -34,11 +36,20 @@ class RoleService {
             $this->permRepo->upsertPermission($roleId, $module['id'], $perms);
         }
 
+        $this->audit->log('create', 'role', $roleId, $data['name'] ?? '', null, $data);
+
         return $roleId;
     }
 
     public function update(int $id, array $data): bool {
-        return $this->roleRepo->update($id, $data);
+        $old = $this->roleRepo->findById($id);
+        $result = $this->roleRepo->update($id, $data);
+
+        if ($result && $old) {
+            $this->audit->log('update', 'role', $id, $old['name'] ?? '', $old, $data);
+        }
+
+        return $result;
     }
 
     public function delete(int $id): array {
@@ -47,7 +58,13 @@ class RoleService {
             return ['success' => false, 'message' => "Role masih digunakan oleh $userCount user. Pindahkan user ke role lain terlebih dahulu."];
         }
 
+        $old = $this->roleRepo->findById($id);
         $this->roleRepo->delete($id);
+
+        if ($old) {
+            $this->audit->log('delete', 'role', $id, $old['name'] ?? '', $old, null);
+        }
+
         return ['success' => true, 'message' => 'Role berhasil dihapus.'];
     }
 }

@@ -5,9 +5,11 @@ use App\Repositories\PermissionRepository;
 
 class PermissionService {
     private $permRepo;
+    private AuditService $audit;
 
     public function __construct() {
         $this->permRepo = new PermissionRepository();
+        $this->audit = new AuditService();
     }
 
     public function getAllModules(): array {
@@ -27,6 +29,10 @@ class PermissionService {
     }
 
     public function updateRolePermissions(int $roleId, array $modules, array $formPermissions): void {
+        // Capture old permissions for audit
+        $oldPerms = [];
+        $newPerms = [];
+
         foreach ($modules as $module) {
             $mid = $module['id'];
             $perms = [
@@ -39,7 +45,16 @@ class PermissionService {
                 'can_download'    => isset($formPermissions[$mid]['can_download']) ? 1 : 0,
             ];
             $this->permRepo->upsertPermission($roleId, $mid, $perms);
+            $newPerms[$module['slug']] = $perms;
         }
+
+        // Get role name for label
+        $db = getDB();
+        $stmt = $db->prepare("SELECT name FROM roles WHERE id = ?");
+        $stmt->execute([$roleId]);
+        $roleName = $stmt->fetchColumn() ?: "Role #$roleId";
+
+        $this->audit->log('update', 'permission', $roleId, $roleName, null, $newPerms);
     }
 
     public function createModule(array $data): int {

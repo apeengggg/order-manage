@@ -7,9 +7,11 @@ use App\Repositories\PermissionRepository;
 
 class TenantService {
     private TenantRepository $tenantRepo;
+    private AuditService $audit;
 
     public function __construct() {
         $this->tenantRepo = new TenantRepository();
+        $this->audit = new AuditService();
     }
 
     public function getAll(): array {
@@ -29,15 +31,31 @@ class TenantService {
         // Create default settings for the new tenant
         $this->createDefaultSettings($tenantId);
 
+        $this->audit->log('create', 'tenant', $tenantId, $data['name'] ?? '', null, $data);
+
         return $tenantId;
     }
 
     public function update(int $id, array $data): bool {
-        return $this->tenantRepo->update($id, $data);
+        $old = $this->tenantRepo->findById($id);
+        $result = $this->tenantRepo->update($id, $data);
+
+        if ($result && $old) {
+            $this->audit->log('update', 'tenant', $id, $old['name'] ?? '', $old, $data);
+        }
+
+        return $result;
     }
 
     public function delete(int $id): bool {
-        return $this->tenantRepo->delete($id);
+        $old = $this->tenantRepo->findById($id);
+        $result = $this->tenantRepo->delete($id);
+
+        if ($result && $old) {
+            $this->audit->log('delete', 'tenant', $id, $old['name'] ?? '', $old, null);
+        }
+
+        return $result;
     }
 
     public function slugExists(string $slug, ?int $excludeId = null): bool {

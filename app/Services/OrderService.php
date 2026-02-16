@@ -5,6 +5,7 @@ use App\Repositories\OrderRepository;
 
 class OrderService {
     private $orderRepo;
+    private AuditService $audit;
 
     /**
      * Map template column clean_name (lowercase) to orders table column.
@@ -23,6 +24,7 @@ class OrderService {
 
     public function __construct() {
         $this->orderRepo = new OrderRepository();
+        $this->audit = new AuditService();
     }
 
     public function getAll(array $filters = []): array {
@@ -44,7 +46,11 @@ class OrderService {
         $data['expedition_id'] = $data['expedition_id'] ?: null;
         $data['resi'] = $data['resi'] ?? null;
         $data['notes'] = $data['notes'] ?? null;
-        return $this->orderRepo->create($data);
+        $id = $this->orderRepo->create($data);
+
+        $this->audit->log('create', 'order', $id, $data['customer_name'] ?? '', null, $data);
+
+        return $id;
     }
 
     /**
@@ -55,11 +61,18 @@ class OrderService {
         if (!$order) return false;
         if ($order['is_exported']) return null;
 
+        $old = $order;
         $data['total'] = $data['qty'] * $data['price'];
         $data['expedition_id'] = $data['expedition_id'] ?: null;
         $data['resi'] = $data['resi'] ?? null;
         $data['notes'] = $data['notes'] ?? null;
-        return $this->orderRepo->update($id, $data);
+        $result = $this->orderRepo->update($id, $data);
+
+        if ($result) {
+            $this->audit->log('update', 'order', $id, $old['customer_name'] ?? '', $old, $data);
+        }
+
+        return $result;
     }
 
     /**
@@ -69,7 +82,14 @@ class OrderService {
         $order = $this->orderRepo->findById($id);
         if (!$order) return false;
         if ($order['is_exported']) return null;
-        return $this->orderRepo->delete($id);
+
+        $result = $this->orderRepo->delete($id);
+
+        if ($result) {
+            $this->audit->log('delete', 'order', $id, $order['customer_name'] ?? '', $order, null);
+        }
+
+        return $result;
     }
 
     public function isExported(int $id): bool {
@@ -82,7 +102,13 @@ class OrderService {
     }
 
     public function exportOrders(array $ids, int $userId): int {
-        return $this->orderRepo->markExported($ids, $userId);
+        $count = $this->orderRepo->markExported($ids, $userId);
+
+        if ($count > 0) {
+            $this->audit->log('export', 'order', implode(',', array_slice($ids, 0, 10)), "Export $count order(s)", null, ['exported_ids' => $ids, 'count' => $count]);
+        }
+
+        return $count;
     }
 
     public function getDashboardStats(): array {

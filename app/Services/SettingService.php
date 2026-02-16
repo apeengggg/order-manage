@@ -6,10 +6,12 @@ use App\Repositories\SettingRepository;
 class SettingService {
     private $settingRepo;
     private $fileService;
+    private AuditService $audit;
 
     public function __construct() {
         $this->settingRepo = new SettingRepository();
         $this->fileService = new FileService();
+        $this->audit = new AuditService();
     }
 
     public function getAll(): array {
