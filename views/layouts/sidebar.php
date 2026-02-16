@@ -31,6 +31,19 @@
                 <i class="fas fa-times"></i>
             </a>
         </div>
+        <?php elseif (isSuperAdmin() && \App\TenantContext::isFiltering()): ?>
+        <?php
+            $_filterTenant = null;
+            $_fRepo = new \App\Repositories\TenantRepository();
+            $_filterTenant = $_fRepo->findById(\App\TenantContext::filterTenantId());
+        ?>
+        <div class="mt-2 mx-2 p-2 rounded" style="background:#17a2b8;color:#fff;font-size:0.85rem;">
+            <i class="fas fa-filter mr-1"></i> Filter:
+            <strong><?= e($_filterTenant['name'] ?? '') ?></strong>
+            <a href="<?= BASE_URL ?>tenants/filter/clear" class="btn btn-sm btn-light ml-1 py-0 px-1" title="Hapus Filter">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
         <?php elseif (isSuperAdmin()): ?>
         <div class="mt-2 mx-2 p-2 rounded" style="background:#6f42c1;color:#fff;font-size:0.85rem;">
             <i class="fas fa-crown mr-1"></i> Super Admin Mode

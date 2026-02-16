@@ -7,22 +7,30 @@ use PDO;
 class RoleRepository {
     private $db;
     private bool $globalView;
+    private bool $showTenantName;
 
     public function __construct() {
         $this->db = getDB();
-        $this->globalView = TenantContext::isSuperAdmin();
+        $this->globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        $this->showTenantName = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
-        if ($this->globalView) {
-            return $this->db->query(
-                "SELECT r.*, t.name as tenant_name FROM roles r
-                 LEFT JOIN tenants t ON r.tenant_id = t.id
-                 ORDER BY t.name, r.id"
-            )->fetchAll();
+        $sql = "SELECT r.*";
+        if ($this->showTenantName) {
+            $sql .= ", t.name as tenant_name";
         }
-        $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
-        $stmt->execute([TenantContext::id()]);
+        $sql .= " FROM roles r";
+        if ($this->showTenantName) {
+            $sql .= " LEFT JOIN tenants t ON r.tenant_id = t.id";
+        }
+        if ($this->globalView) {
+            $sql .= " ORDER BY t.name, r.id";
+            return $this->db->query($sql)->fetchAll();
+        }
+        $sql .= " WHERE r.tenant_id = ? ORDER BY r.id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([TenantContext::effectiveTenantId()]);
         return $stmt->fetchAll();
     }
 
@@ -61,20 +69,21 @@ class RoleRepository {
     }
 
     public function findAllWithUserCount(): array {
-        if ($this->globalView) {
-            return $this->db->query(
-                "SELECT r.*, t.name as tenant_name,
-                        (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
-                 FROM roles r
-                 LEFT JOIN tenants t ON r.tenant_id = t.id
-                 ORDER BY t.name, r.id"
-            )->fetchAll();
+        $sql = "SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count";
+        if ($this->showTenantName) {
+            $sql .= ", t.name as tenant_name";
         }
-        $stmt = $this->db->prepare(
-            "SELECT r.*, (SELECT COUNT(*) FROM users u WHERE u.role_id = r.id) as user_count
-             FROM roles r WHERE r.tenant_id = ? ORDER BY r.id"
-        );
-        $stmt->execute([TenantContext::id()]);
+        $sql .= " FROM roles r";
+        if ($this->showTenantName) {
+            $sql .= " LEFT JOIN tenants t ON r.tenant_id = t.id";
+        }
+        if ($this->globalView) {
+            $sql .= " ORDER BY t.name, r.id";
+            return $this->db->query($sql)->fetchAll();
+        }
+        $sql .= " WHERE r.tenant_id = ? ORDER BY r.id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([TenantContext::effectiveTenantId()]);
         return $stmt->fetchAll();
     }
 }

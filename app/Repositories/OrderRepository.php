@@ -6,10 +6,12 @@ use App\TenantContext;
 class OrderRepository {
     private $db;
     private bool $globalView;
+    private bool $showTenantName;
 
     public function __construct() {
         $this->db = getDB();
-        $this->globalView = TenantContext::isSuperAdmin();
+        $this->globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        $this->showTenantName = TenantContext::isSuperAdmin();
     }
 
     private function tenantWhere(string $alias = ''): string {
@@ -18,20 +20,20 @@ class OrderRepository {
     }
 
     private function tenantParams(): array {
-        return $this->globalView ? [] : [TenantContext::id()];
+        return $this->globalView ? [] : [TenantContext::effectiveTenantId()];
     }
 
     public function findAll(array $filters = []): array {
         $sql = "SELECT o.*, e.name as expedition_name, e.code as expedition_code,
                        u.name as created_by_name, ue.name as exported_by_name";
-        if ($this->globalView) {
+        if ($this->showTenantName) {
             $sql .= ", t.name as tenant_name";
         }
         $sql .= " FROM orders o
                 LEFT JOIN expeditions e ON o.expedition_id = e.id
                 LEFT JOIN users u ON o.created_by = u.id
                 LEFT JOIN users ue ON o.exported_by = ue.id";
-        if ($this->globalView) {
+        if ($this->showTenantName) {
             $sql .= " LEFT JOIN tenants t ON o.tenant_id = t.id";
         }
         $sql .= " WHERE " . $this->tenantWhere('o');

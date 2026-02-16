@@ -12,12 +12,13 @@ class TemplateRepository {
     }
 
     public function findByExpeditionId(int $expeditionId): ?array {
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             $stmt = $this->db->prepare("SELECT * FROM expedition_templates WHERE expedition_id = ?");
             $stmt->execute([$expeditionId]);
         } else {
             $stmt = $this->db->prepare("SELECT * FROM expedition_templates WHERE expedition_id = ? AND tenant_id = ?");
-            $stmt->execute([$expeditionId, TenantContext::id()]);
+            $stmt->execute([$expeditionId, TenantContext::effectiveTenantId()]);
         }
         $row = $stmt->fetch();
         return $row ?: null;
@@ -26,14 +27,15 @@ class TemplateRepository {
     public function findByExpeditionIds(array $ids): array {
         if (empty($ids)) return [];
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             $stmt = $this->db->prepare(
                 "SELECT expedition_id, id, sheet_name, columns, file_id
                  FROM expedition_templates WHERE expedition_id IN ($placeholders)"
             );
             $stmt->execute($ids);
         } else {
-            $params = array_merge($ids, [TenantContext::id()]);
+            $params = array_merge($ids, [TenantContext::effectiveTenantId()]);
             $stmt = $this->db->prepare(
                 "SELECT expedition_id, id, sheet_name, columns, file_id
                  FROM expedition_templates WHERE expedition_id IN ($placeholders) AND tenant_id = ?"

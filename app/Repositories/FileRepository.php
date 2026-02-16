@@ -29,7 +29,8 @@ class FileRepository {
     }
 
     public function findByModule(string $module, int $moduleId): array {
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             $stmt = $this->db->prepare(
                 "SELECT f.*, u.name AS uploader_name
                  FROM files f LEFT JOIN users u ON u.id = f.uploaded_by
@@ -44,7 +45,7 @@ class FileRepository {
                  WHERE f.module = ? AND f.module_id = ? AND f.tenant_id = ?
                  ORDER BY f.created_at DESC"
             );
-            $stmt->execute([$module, $moduleId, TenantContext::id()]);
+            $stmt->execute([$module, $moduleId, TenantContext::effectiveTenantId()]);
         }
         return $stmt->fetchAll();
     }
@@ -52,7 +53,8 @@ class FileRepository {
     public function findLatestByModuleIds(string $module, array $moduleIds): array {
         if (empty($moduleIds)) return [];
         $placeholders = implode(',', array_fill(0, count($moduleIds), '?'));
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             $params = array_merge([$module], $moduleIds);
             $stmt = $this->db->prepare(
                 "SELECT f.* FROM files f
@@ -63,7 +65,7 @@ class FileRepository {
                  ) latest ON f.id = latest.max_id"
             );
         } else {
-            $params = array_merge([$module, TenantContext::id()], $moduleIds);
+            $params = array_merge([$module, TenantContext::effectiveTenantId()], $moduleIds);
             $stmt = $this->db->prepare(
                 "SELECT f.* FROM files f
                  INNER JOIN (

@@ -1,4 +1,24 @@
 <!-- Navbar -->
+<?php
+$_navIsSuper = isSuperAdmin() && !\App\TenantContext::isImpersonating();
+$_navIsFiltering = \App\TenantContext::isFiltering();
+$_navFilterId = \App\TenantContext::filterTenantId();
+$_navTenants = [];
+if ($_navIsSuper) {
+    $_navTenantRepo = new \App\Repositories\TenantRepository();
+    $_navTenants = $_navTenantRepo->findAll();
+}
+// Find current filter tenant name
+$_navFilterName = null;
+if ($_navIsFiltering) {
+    foreach ($_navTenants as $_nt) {
+        if ((int)$_nt['id'] === $_navFilterId) {
+            $_navFilterName = $_nt['name'];
+            break;
+        }
+    }
+}
+?>
 <nav class="main-header navbar navbar-expand navbar-white navbar-light" id="mainNavbar">
     <!-- Left -->
     <ul class="navbar-nav">
@@ -11,6 +31,32 @@
                 <i class="fas fa-eye mr-1"></i> Impersonating: <strong><?= e(\App\TenantContext::tenant()['name'] ?? '') ?></strong>
                 <a href="<?= BASE_URL ?>tenants/stopImpersonate" class="badge badge-warning ml-1">Kembali</a>
             </span>
+        </li>
+        <?php elseif ($_navIsSuper): ?>
+        <li class="nav-item dropdown d-none d-md-block">
+            <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown" role="button">
+                <i class="fas fa-building mr-1"></i>
+                <?php if ($_navIsFiltering && $_navFilterName): ?>
+                    <span class="badge badge-info"><?= e($_navFilterName) ?></span>
+                <?php else: ?>
+                    <span class="badge badge-secondary">Semua Tenant</span>
+                <?php endif; ?>
+            </a>
+            <div class="dropdown-menu">
+                <h6 class="dropdown-header">Filter Tenant</h6>
+                <a class="dropdown-item <?= !$_navIsFiltering ? 'active' : '' ?>" href="<?= BASE_URL ?>tenants/filter/clear">
+                    <i class="fas fa-globe mr-2"></i> Semua Tenant
+                </a>
+                <div class="dropdown-divider"></div>
+                <?php foreach ($_navTenants as $_nt): ?>
+                <a class="dropdown-item <?= $_navFilterId === (int)$_nt['id'] ? 'active' : '' ?>" href="<?= BASE_URL ?>tenants/filter/<?= $_nt['id'] ?>">
+                    <i class="fas fa-building mr-2"></i> <?= e($_nt['name']) ?>
+                    <?php if (!$_nt['is_active']): ?>
+                        <span class="badge badge-danger ml-1">Nonaktif</span>
+                    <?php endif; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
         </li>
         <?php endif; ?>
     </ul>

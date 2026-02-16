@@ -6,22 +6,30 @@ use App\TenantContext;
 class ExpeditionRepository {
     private $db;
     private bool $globalView;
+    private bool $showTenantName;
 
     public function __construct() {
         $this->db = getDB();
-        $this->globalView = TenantContext::isSuperAdmin();
+        $this->globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        $this->showTenantName = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
-        if ($this->globalView) {
-            return $this->db->query(
-                "SELECT e.*, t.name as tenant_name FROM expeditions e
-                 LEFT JOIN tenants t ON e.tenant_id = t.id
-                 WHERE e.is_active=1 ORDER BY t.name, e.name"
-            )->fetchAll();
+        $sql = "SELECT e.*";
+        if ($this->showTenantName) {
+            $sql .= ", t.name as tenant_name";
         }
-        $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE is_active=1 AND tenant_id = ? ORDER BY name");
-        $stmt->execute([TenantContext::id()]);
+        $sql .= " FROM expeditions e";
+        if ($this->showTenantName) {
+            $sql .= " LEFT JOIN tenants t ON e.tenant_id = t.id";
+        }
+        if ($this->globalView) {
+            $sql .= " WHERE e.is_active=1 ORDER BY t.name, e.name";
+            return $this->db->query($sql)->fetchAll();
+        }
+        $sql .= " WHERE e.is_active=1 AND e.tenant_id = ? ORDER BY e.name";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([TenantContext::effectiveTenantId()]);
         return $stmt->fetchAll();
     }
 
@@ -31,7 +39,7 @@ class ExpeditionRepository {
             $stmt->execute([$id]);
         } else {
             $stmt = $this->db->prepare("SELECT * FROM expeditions WHERE id=? AND tenant_id = ?");
-            $stmt->execute([$id, TenantContext::id()]);
+            $stmt->execute([$id, TenantContext::effectiveTenantId()]);
         }
         return $stmt->fetch() ?: null;
     }

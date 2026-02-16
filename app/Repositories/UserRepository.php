@@ -7,30 +7,30 @@ use PDO;
 class UserRepository {
     private $db;
     private bool $globalView;
+    private bool $showTenantName;
 
     public function __construct() {
         $this->db = getDB();
-        $this->globalView = TenantContext::isSuperAdmin();
+        $this->globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        $this->showTenantName = TenantContext::isSuperAdmin();
     }
 
     public function findAll(): array {
-        if ($this->globalView) {
-            return $this->db->query(
-                "SELECT u.*, r.name as role_name, r.slug as role_slug, t.name as tenant_name
-                 FROM users u
-                 LEFT JOIN roles r ON r.id = u.role_id
-                 LEFT JOIN tenants t ON u.tenant_id = t.id
-                 ORDER BY t.name, u.id"
-            )->fetchAll();
+        $sql = "SELECT u.*, r.name as role_name, r.slug as role_slug";
+        if ($this->showTenantName) {
+            $sql .= ", t.name as tenant_name";
         }
-        $stmt = $this->db->prepare(
-            "SELECT u.*, r.name as role_name, r.slug as role_slug
-             FROM users u
-             LEFT JOIN roles r ON r.id = u.role_id
-             WHERE u.tenant_id = ?
-             ORDER BY u.id"
-        );
-        $stmt->execute([TenantContext::id()]);
+        $sql .= " FROM users u LEFT JOIN roles r ON r.id = u.role_id";
+        if ($this->showTenantName) {
+            $sql .= " LEFT JOIN tenants t ON u.tenant_id = t.id";
+        }
+        if ($this->globalView) {
+            $sql .= " ORDER BY t.name, u.id";
+            return $this->db->query($sql)->fetchAll();
+        }
+        $sql .= " WHERE u.tenant_id = ? ORDER BY u.id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([TenantContext::effectiveTenantId()]);
         return $stmt->fetchAll();
     }
 

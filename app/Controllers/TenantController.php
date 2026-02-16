@@ -112,4 +112,33 @@ class TenantController {
         flash('success', 'Kembali ke mode Super Admin.');
         redirect('tenants');
     }
+
+    public function filter($id = null): void {
+        if (!isSuperAdmin()) {
+            redirect('dashboard');
+            return;
+        }
+
+        if ($id === null || $id === 'clear') {
+            TenantContext::setFilter(null);
+            flash('success', 'Filter tenant dihapus. Menampilkan semua data.');
+        } else {
+            $tenant = $this->tenantService->getById((int)$id);
+            if (!$tenant) {
+                flash('error', 'Tenant tidak ditemukan.');
+                redirect('dashboard');
+                return;
+            }
+            TenantContext::setFilter((int)$id);
+            flash('success', 'Filter aktif: ' . $tenant['name']);
+        }
+
+        // Redirect back to previous page or dashboard
+        $referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if ($referer && strpos($referer, $_SERVER['HTTP_HOST']) !== false) {
+            header("Location: $referer");
+            exit;
+        }
+        redirect('dashboard');
+    }
 }

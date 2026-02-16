@@ -20,7 +20,8 @@ class PermissionRepository {
     }
 
     public function findAllPermissions(): array {
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             $rows = $this->db->query(
                 "SELECT rp.*, m.name as module_name, m.slug as module_slug, m.icon as module_icon
                  FROM role_permissions rp
@@ -37,7 +38,7 @@ class PermissionRepository {
                  WHERE m.is_active = 1 AND (r.tenant_id = ? OR r.tenant_id IS NULL)
                  ORDER BY rp.role_id, m.sort_order"
             );
-            $stmt->execute([TenantContext::id()]);
+            $stmt->execute([TenantContext::effectiveTenantId()]);
             $rows = $stmt->fetchAll();
         }
         $grouped = [];
@@ -108,15 +109,26 @@ class PermissionRepository {
     }
 
     public function getRoles(): array {
-        if (TenantContext::isSuperAdmin()) {
+        $globalView = TenantContext::isSuperAdmin() && !TenantContext::isFiltering();
+        if ($globalView) {
             return $this->db->query(
                 "SELECT r.*, t.name as tenant_name FROM roles r
                  LEFT JOIN tenants t ON r.tenant_id = t.id
                  ORDER BY t.name, r.id"
             )->fetchAll();
         }
-        $stmt = $this->db->prepare("SELECT * FROM roles WHERE tenant_id = ? ORDER BY id");
-        $stmt->execute([TenantContext::id()]);
+        $showTenantName = TenantContext::isSuperAdmin();
+        $sql = "SELECT r.*";
+        if ($showTenantName) {
+            $sql .= ", t.name as tenant_name";
+        }
+        $sql .= " FROM roles r";
+        if ($showTenantName) {
+            $sql .= " LEFT JOIN tenants t ON r.tenant_id = t.id";
+        }
+        $sql .= " WHERE r.tenant_id = ? ORDER BY r.id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([TenantContext::effectiveTenantId()]);
         return $stmt->fetchAll();
     }
 

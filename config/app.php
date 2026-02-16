@@ -60,6 +60,10 @@ function tenantId(): ?int {
     return \App\TenantContext::id();
 }
 
+function isFiltering() {
+    return \App\TenantContext::isFiltering();
+}
+
 function auth($key = null) {
     if ($key) return $_SESSION[$key] ?? null;
     return $_SESSION;
